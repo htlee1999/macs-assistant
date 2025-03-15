@@ -1,5 +1,6 @@
+import { customModel } from '@/lib/ai';
 import { getHeadlines, saveHeadlines, getAllRecords } from '@/lib/db/queries'; 
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { generateText } from 'ai';
 
 export async function GET(req: Request) {
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
 
                 // Make the OpenAI API call
                 const response = await generateText({
-                    model: openai("gpt-4o"),
+                    model: customModel("gemini-2.0-flash"),
                     prompt: headlinesPrompt + `This is the list of feedback summaries:\n${JSON.stringify(feedbackSummaries)}`,
                     maxTokens: 4096,
                     temperature: 0.7,

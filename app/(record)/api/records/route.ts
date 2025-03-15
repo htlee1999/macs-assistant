@@ -1,7 +1,8 @@
 import { auth } from '@/app/(auth)/auth';
 import { generateText } from 'ai';
 import { getRecordsByUserId, updateRecordSummary, updateRecordTopics, saveRecordsByUserId } from '@/lib/db/queries';
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
+import { customModel } from "@/lib/ai";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -21,9 +22,7 @@ export async function GET(req: Request) {
     for (const record of records) {
       if (!record.summary || record.summary.trim() === '') {
         try {
-          // const { summary, evergreen_topics } = await createSummaryAndTopics(record.message);
-          const summary = "This is a summary";
-          const evergreen_topics = ["Amenities and Facilities", "Sustainability and Resiliency"];
+          const { summary, evergreen_topics } = await createSummaryAndTopics(record.message);
           record.summary = summary;
 
           // Update the summary separately
@@ -124,7 +123,7 @@ async function createSummaryAndTopics(message: string): Promise<{ summary: strin
     topP: 1,
     frequencyPenalty: 0,
     presencePenalty: 0,
-    model: openai("gpt-4o-mini"),
+    model: customModel("gemini-2.0-flash") ,
   });
 
   try {

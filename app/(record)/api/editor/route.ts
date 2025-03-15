@@ -3,15 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 import { auth } from '@/app/(auth)/auth';
 import { getRecordById, getRecordsByUserId, updateDraftById, deleteDraftById, insertDocument, saveDraftAndReasoning } from '@/lib/db/queries';
 import { generateEditorContent } from '@/lib/editor/content';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { embed, generateText } from 'ai';
 import type { JSONContent } from 'novel';
 import { ApplicationError } from '@/lib/errors';
+import { customModel } from '@/lib/ai';
 
-const chatModel = openai.chat("gpt-4-turbo-preview");
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const embeddingModel = openai.embedding('text-embedding-ada-002');
+const chatModel = google("gemini-2.0-flash") ;
+// const supabaseUrl = process.env.SUPABASE_URL;
+// const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const embeddingModel = "gemini-embedding-exp-03-07";
 
 export async function GET(req: Request) {
   try {
@@ -69,9 +70,9 @@ export async function POST(req: Request) {
     });
   }
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new ApplicationError('Missing Supabase environment variables');
-  }
+  // if (!supabaseUrl || !supabaseServiceKey) {
+  //   throw new ApplicationError('Missing Supabase environment variables');
+  // }
 
   // Parse request body
   const body = await req.json();
@@ -134,42 +135,43 @@ export async function POST(req: Request) {
 
     // Generate and save AI draft if requested
     if (generateDraft) {
-      let relevantChunks = Array.isArray(record.relevantChunks) ? record.relevantChunks : [];
+      // let relevantChunks = Array.isArray(record.relevantChunks) ? record.relevantChunks : [];
+      let relevantChunks: any[] = [];
       let relatedReplies: { message: string, reply: string }[] = [];
 
-      // If no relevantChunks, generate them
-      if (relevantChunks.length === 0) {
-        const searchText = `${record.message}`.replaceAll('\n', ' ');
-        const { embedding } = await embed({ model: embeddingModel, value: searchText });
+      // // If no relevantChunks, generate them
+      // if (relevantChunks.length === 0) {
+      //   const searchText = `${record.message}`.replaceAll('\n', ' ');
+      //   const { embedding } = await embed({ model: customModel("gemini-2.0-flash"), value: searchText });
 
-        try {
-          const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-          const { data: fetchedChunks, error: matchError } = await supabaseClient.rpc('match_page_sections', {
-            embedding,
-            match_threshold: 0.80,  
-            match_count: 3,
-            min_content_length: 50
-          });
+      //   try {
+      //     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+      //     const { data: fetchedChunks, error: matchError } = await supabaseClient.rpc('match_page_sections', {
+      //       embedding,
+      //       match_threshold: 0.80,  
+      //       match_count: 3,
+      //       min_content_length: 50
+      //     });
 
-          if (matchError || !fetchedChunks) {
-            console.error('Error matching page sections:', matchError);
-            return new Response('Error finding relevant information', { status: 500 });
-          }
+      //     if (matchError || !fetchedChunks) {
+      //       console.error('Error matching page sections:', matchError);
+      //       return new Response('Error finding relevant information', { status: 500 });
+      //     }
 
-          relevantChunks = fetchedChunks.map((chunk: any) => ({
-            content: chunk.content.trim(),
-            heading: chunk.heading || 'General Information',
-            similarity: Math.round(chunk.similarity * 100) / 100
-          }));
-          console.log('Relevant chunks:', relevantChunks);
-        } catch (error) {
-          console.error('Error fetching chunks from Supabase:', error);
-          return new Response(JSON.stringify({ error: 'Failed to fetch relevant chunks from Supabase' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-      }
+      //     relevantChunks = fetchedChunks.map((chunk: any) => ({
+      //       content: chunk.content.trim(),
+      //       heading: chunk.heading || 'General Information',
+      //       similarity: Math.round(chunk.similarity * 100) / 100
+      //     }));
+      //     console.log('Relevant chunks:', relevantChunks);
+      //   } catch (error) {
+      //     console.error('Error fetching chunks from Supabase:', error);
+      //     return new Response(JSON.stringify({ error: 'Failed to fetch relevant chunks from Supabase' }), {
+      //       status: 500,
+      //       headers: { 'Content-Type': 'application/json' }
+      //     });
+      //   }
+      // }
 
       try {
         // SIMILAR EMAILS
@@ -239,7 +241,7 @@ export async function POST(req: Request) {
         Focus on clarity.\n\n`;
 
         const result = await generateText({
-          model: chatModel,
+          model: customModel("gemini-2.0-flash"),
           prompt: rules + `Please draft a response to this email:\n
               Content: ${record.message}\n
               
