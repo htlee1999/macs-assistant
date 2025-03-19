@@ -52,7 +52,7 @@ const Referencing: React.FC<ReferencingProps> = ({ matches, reasoning, onSelect 
   }
 
   // Filter chunks with similarity > 0.8
-  const highSimilarityChunks = matches.filter(chunk => chunk.similarity >= 0.8);
+  const highSimilarityChunks = matches;
 
   if (!highSimilarityChunks.length) {
     return (

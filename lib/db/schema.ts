@@ -11,7 +11,17 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  customType,
 } from 'drizzle-orm/pg-core';
+
+// Define pgVector custom type directly in schema file
+// You can also import this from a separate file if you prefer
+const pgVectorColumn = (name: string, { dimensions }: { dimensions: number }) => 
+  customType<{ data: number[]; driverData: string }>({
+    dataType() {
+      return `vector(${dimensions})`;
+    },
+  })(name);
 
 export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
@@ -26,30 +36,30 @@ export type User = InferSelectModel<typeof user>;
 // NEW: Data type for Record
 export const record = pgTable('Record', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
-  message: text('case_description').notNull(),  
-  sectionCode: text('section_code').notNull(),
-  actionOfficer1: uuid('action_officer1'),          
-  actionOfficer2: uuid('action_officer2'),
-  creationOfficer: uuid('creation_officer'),
-  caseType: text('case_type_descr').notNull(),
-  channel: text('channel_descr').notNull(),
-  category: text('business_descr').notNull(),
-  subcategory: text('detailed_business_descr'),
-  outcome: text('decision_descr').notNull(),
-  replyDate: timestamp('final_reply_date_time'),
-  reply: text('reply_content'),
-  planningArea: text('planning_area_descr'),
+  message: text('message').notNull(),  
+  sectionCode: text('sectionCode').notNull(), 
+  actionOfficer1: uuid('actionOfficer1').notNull(), 
+  actionOfficer2: uuid('actionOfficer2'), 
+  creationOfficer: uuid('creationOfficer'), 
+  caseType: text('caseType').notNull(), 
+  channel: text('channel').notNull(), 
+  category: text('category').notNull(), 
+  subcategory: text('subcategory'), 
+  outcome: text('outcome').notNull().default('Open'), 
+  replyDate: timestamp('replyDate'), 
+  reply: text('reply'), 
+  planningArea: text('planningArea'), 
   location: text('location'),
-  locationX: text('location_x'),
-  locationY: text('location_y'),
-  creationDate: timestamp('creation_date_time').notNull(),
-  receiveDate: timestamp('receive_date_time').notNull(),
+  locationX: text('locationX'), 
+  locationY: text('locationY'), 
   draft: jsonb('draft'),
   summary: text('summary'),
-  evergreen_topics: text('evergreen_topics').array(),
   reasoning: text('reasoning'),
-  relevantChunks: jsonb('relevantChunks'), 
-  relatedEmails: text('relatedEmails').array(),  
+  creationDate: timestamp('creationDate').notNull(), 
+  receiveDate: timestamp('receiveDate').notNull(), 
+  relevantChunks: jsonb('relevantChunks'),
+  relatedEmails: text('relatedEmails').array(),
+  evergreen_topics: text('evergreen_topics').array(),
 });
 
 
@@ -58,8 +68,21 @@ export type Record = InferSelectModel<typeof record>;
 // NEW: Data type for Email
 export const email = pgTable('Email', {
   content: json('content').notNull(),
-}
-)
+});
+
+// NEW: Data type for FAQ Chunks
+export const faqChunks = pgTable('faq_chunks', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  faq_id: varchar('faq_id', { length: 50 }).notNull(),
+  category: varchar('category', { length: 100 }).notNull(),
+  section: varchar('section', { length: 100 }).notNull(),
+  heading: text('heading').notNull(),
+  content: text('content').notNull(),
+  embedding: pgVectorColumn('embedding', { dimensions: 768 }), // Vector column is now properly defined
+  created_at: timestamp('created_at').defaultNow().notNull()
+});
+
+export type FAQChunk = InferSelectModel<typeof faqChunks>;
 
 export const headline = pgTable(
   'Headlines',
@@ -110,3 +133,31 @@ export const preferencesTable = pgTable(
 );
 
 export type Preferences = InferSelectModel<typeof preferencesTable>;
+
+// Add utility function to search FAQ chunks 
+export async function searchFAQChunks(db: any, query: string, limit: number = 5) {
+  // For now, this is a simple text search
+  // In production, you might want to use more advanced search features like full-text search
+  
+  // This uses a basic LIKE query with the query text
+  const searchTerm = `%${query.toLowerCase()}%`;
+  
+  const results = await db.execute(
+    `SELECT * FROM faq_chunks 
+     WHERE 
+       LOWER(heading) LIKE $1 OR 
+       LOWER(content) LIKE $1 OR
+       LOWER(category) LIKE $1 OR
+       LOWER(section) LIKE $1
+     ORDER BY 
+       CASE
+         WHEN LOWER(heading) LIKE $1 THEN 1
+         WHEN LOWER(content) LIKE $1 THEN 2
+         ELSE 3
+       END
+     LIMIT $2`,
+    [searchTerm, limit]
+  );
+  
+  return results.rows;
+}

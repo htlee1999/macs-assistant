@@ -1,7 +1,6 @@
 import { auth } from '@/app/(auth)/auth';
 import { generateText } from 'ai';
 import { getRecordsByUserId, updateRecordSummary, updateRecordTopics, saveRecordsByUserId } from '@/lib/db/queries';
-import { google } from "@ai-sdk/google";
 import { customModel } from "@/lib/ai";
 
 export async function GET(req: Request) {
@@ -103,12 +102,12 @@ async function createSummaryAndTopics(message: string): Promise<{ summary: strin
     ${evergreenTopics.map(topic => `- ${topic}`).join("\n")}
 
     Your response must be formatted as a JSON object with the following structure:
-    \`\`\`json
+   json
     {
       "summary": "<concise summary of the feedback email>",
       "evergreen_topics": ["<relevant topic 1>", "<relevant topic 2>", ...]
     }
-    \`\`\`
+   
 
     If the given text lacks sufficient information to summarize, do not generate any response.
 

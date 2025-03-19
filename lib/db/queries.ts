@@ -1,19 +1,25 @@
 import 'server-only';
 
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { JSONContent } from 'novel';
+import { randomUUID } from 'crypto';
+import { embed } from 'ai';
+import { generateEmbedding } from '../ai/custom-embedding-model';
 
 import {
   user,
   record, // NEWLY ADDED
   type User,
   headline,
-  preferencesTable
+  preferencesTable,
+  faqChunks,
+  type FAQChunk,
 } from './schema';
-import { randomRecordGenerator } from './randomGenerator';
+import { randomMcDonaldsRecordGenerator } from './randomGenerator';
+import { select } from 'ts-pattern';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -28,11 +34,7 @@ console.log("Database URL partial:", process.env.POSTGRES_URL?.substring(0, 10) 
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
-interface RelevantChunk {
-  content: string;
-  heading: string;
-  similarity: number;
-}
+
 
 interface DatabaseRecord {
   id: string;
@@ -58,7 +60,7 @@ interface DatabaseRecord {
   summary: string | null;
   evergreen_topics: string[] | null;
   reasoning: string | null;
-  relevantChunks: RelevantChunk[] | null;
+  relevantChunks: FAQChunk[] | null;
   relatedEmails: string[] | null;
 }
 
@@ -110,7 +112,7 @@ export async function deleteDraftById({ recordId }: { recordId: string }) {
 export async function saveRecordsByUserId({ id, samples }: { id: string, samples: number }) {
   try {
     // Fake records to simulate database data
-    const fakeRecords = randomRecordGenerator(id, samples)
+    const fakeRecords = randomMcDonaldsRecordGenerator(id, samples)
 
     // Simulate ordering by createdAt (descending order)
     const orderedRecords = fakeRecords.sort((a, b) => b.creationDate.getTime() - a.creationDate.getTime());
@@ -155,7 +157,7 @@ export async function insertDocument({
   recordId,
   topMatches
 }: {
-  relevantChunks: Array<RelevantChunk>;
+  relevantChunks: FAQChunk[];
   recordId: string;
   topMatches: Array<string>;
 }) {
@@ -784,5 +786,303 @@ export async function getSomeRecordsById({ ids }: { ids: string[] }): Promise<Da
   } catch (error) {
     console.error('Failed to get records by ids from database:', error);
     throw error;
+  }
+}
+
+export async function storeFAQChunks(items: Array<{
+  faq_id: string;
+  category: string;
+  section: string;
+  heading: string;
+  content: string;
+  embedding?: number[]; // Make embedding optional
+}>): Promise<number> {
+  try {
+    console.log(`Storing ${items.length} FAQ chunks in database`);
+    
+    // Prepare values for insertion
+    const values = items.map(item => ({
+      id: randomUUID(),
+      faq_id: item.faq_id,
+      category: item.category,
+      section: item.section,
+      heading: item.heading,
+      content: item.content,
+      embedding: item.embedding, // Use embedding if provided
+      created_at: new Date()
+    }));
+    
+    // Insert items in batches
+    let insertedCount = 0;
+    const batchSize = 50;
+    
+    for (let i = 0; i < values.length; i += batchSize) {
+      const batch = values.slice(i, i + batchSize);
+      
+      try {
+        // First try inserting with standard method
+        await db.insert(faqChunks).values(batch);
+        insertedCount += batch.length;
+      } catch (error) {
+        // If that fails, it might be because of the vector type
+        console.warn('Standard insert failed, trying SQL insert with vector cast:', error);
+        
+        // Insert each item individually with proper vector casting
+        for (const item of batch) {
+          try {
+            if (item.embedding) {
+              await db.execute(sql`
+                INSERT INTO faq_chunks (
+                  id, faq_id, category, section, heading, content, embedding, created_at
+                ) VALUES (
+                  ${item.id}, ${item.faq_id}, ${item.category}, ${item.section}, 
+                  ${item.heading}, ${item.content}, ${item.embedding}::vector, ${item.created_at}
+                )
+              `);
+            } else {
+              await db.execute(sql`
+                INSERT INTO faq_chunks (
+                  id, faq_id, category, section, heading, content, created_at
+                ) VALUES (
+                  ${item.id}, ${item.faq_id}, ${item.category}, ${item.section}, 
+                  ${item.heading}, ${item.content}, ${item.created_at}
+                )
+              `);
+            }
+            insertedCount++;
+          } catch (itemError) {
+            console.error(`Failed to insert item ${item.faq_id}:`, itemError);
+          }
+        }
+      }
+      
+      console.log(`Inserted batch of ${batch.length} FAQ chunks`);
+    }
+    
+    console.log(`Successfully stored ${insertedCount} FAQ chunks`);
+    return insertedCount;
+  } catch (error) {
+    console.error('Failed to store FAQ chunks in database:', error);
+    throw error;
+  }
+}
+
+
+// Keep your existing text-based search
+
+
+export async function searchFAQChunks(query: string, limit: number = 5): Promise<any[]> {
+  let client = null;
+  
+  try {
+    console.log(`Performing text search for: "${query}"`);
+    
+    // Prepare the search term
+    const searchTerm = `%${query.toLowerCase()}%`;
+    
+    // Connect to database
+    client = postgres(process.env.POSTGRES_URL!);
+    
+    // Execute the text search query
+    const results = await client`
+      SELECT * FROM faq_chunks 
+      WHERE 
+        LOWER(heading) LIKE ${searchTerm} OR 
+        LOWER(content) LIKE ${searchTerm} OR
+        LOWER(category) LIKE ${searchTerm} OR
+        LOWER(section) LIKE ${searchTerm}
+      ORDER BY 
+        CASE
+          WHEN LOWER(heading) LIKE ${searchTerm} THEN 1
+          WHEN LOWER(content) LIKE ${searchTerm} THEN 2
+          ELSE 3
+        END
+      LIMIT ${limit}
+    `;
+    
+    console.log(`Text search found ${results.length} results`);
+    
+    return results;
+  } catch (error) {
+    console.error('Text search failed:', error);
+    return []; // Return empty array if search fails
+  } finally {
+    // Close client connection if it was opened
+    if (client) {
+      try {
+        await client.end();
+      } catch (closeError) {
+        console.warn('Error closing database connection:', closeError);
+      }
+    }
+  }
+}
+
+// Add new vector search function
+export async function vectorSearchFAQChunks(query: string, threshold: number = 0.65, limit: number = 5): Promise<any[]> {
+  try {
+    console.log(`Performing vector search for: "${query}"`);
+    
+    // Generate embedding for the search query
+    const searchText = query.replaceAll('\n', ' ');
+    
+    // Use our new generateEmbedding function instead of the embed function
+    const embedding = await generateEmbedding(searchText);
+    
+    // Validate embedding before using it
+    if (!embedding || !Array.isArray(embedding)) {
+      console.warn('Invalid embedding generated, falling back to text search');
+      return searchFAQChunks(query, limit);
+    }
+    
+    // Check if we have the pgvector extension and vector column
+    const hasVectorSupport = await checkVectorSupport();
+    
+    if (!hasVectorSupport) {
+      console.warn('Vector search not available - falling back to text search');
+      return searchFAQChunks(query, limit);
+    }
+    
+    try {
+      // Use raw SQL for vector search with cosine similarity
+      // Modified to handle the embedding format correctly
+      const results = await db.execute(sql`
+        SELECT 
+          id, faq_id, category, section, heading, content,
+          1 - (embedding <=> ${embedding}::vector) as similarity
+        FROM faq_chunks
+        WHERE embedding IS NOT NULL
+          AND length(content) >= 50
+          AND (1 - (embedding <=> ${embedding}::vector)) > ${threshold}
+        ORDER BY similarity DESC
+        LIMIT ${limit}
+      `);
+      
+      // Add better similarity scores to results
+      return results.map((row: any) => ({
+        ...row,
+        similarity: Math.round(row.similarity * 100) / 100
+      }));
+    } catch (sqlError) {
+      console.error('SQL vector search error:', sqlError);
+      
+      // Try alternative syntax if the first attempt failed
+      // Some PostgreSQL setups may require different syntax for vector casting
+      try {
+        console.log('Trying alternative vector search syntax...');
+        
+        const results = await db.execute(sql`
+          SELECT 
+            id, faq_id, category, section, heading, content,
+            1 - (embedding <=> ${JSON.stringify(embedding)}::vector) as similarity
+          FROM faq_chunks
+          WHERE embedding IS NOT NULL
+            AND length(content) >= 50
+            AND (1 - (embedding <=> ${JSON.stringify(embedding)}::vector)) > ${threshold}
+          ORDER BY similarity DESC
+          LIMIT ${limit}
+        `);
+        
+        return results.map((row: any) => ({
+          ...row,
+          similarity: Math.round(row.similarity * 100) / 100
+        }));
+      } catch (altError) {
+        console.error('Alternative vector search also failed:', altError);
+        throw altError; // Throw to trigger the fallback
+      }
+    }
+  } catch (error) {
+    console.error('Vector search failed:', error);
+    console.log('Falling back to text search');
+    // Fall back to text search if vector search fails
+    return searchFAQChunks(query, limit);
+  }
+}
+
+// New function to find relevant chunks for email responses
+export async function findRelevantChunks(message: string, threshold: number = 0.70, count: number = 3): Promise<any[]> {
+  try {
+    // const selectChunks = await db.select().from(faqChunks).limit(5);
+    
+    console.log(`Finding relevant chunks for message`);
+    
+    // Try vector search first with detailed error handling
+    try {
+      const chunks = await vectorSearchFAQChunks(message, threshold, count);
+      
+      if (chunks && chunks.length > 0) {
+        console.log(`Vector search found ${chunks.length} relevant chunks`);
+        return chunks.map(chunk => ({
+          content: chunk.content.trim(),
+          heading: chunk.heading || 'General Information',
+          category: chunk.category || 'General',
+          section: chunk.section || 'Information',
+          similarity: chunk.similarity
+        }));
+      }
+    } catch (vectorError) {
+      console.error('Vector search error in findRelevantChunks:', vectorError);
+      // Continue to text search fallback
+    }
+    
+    // Fall back to text search if no vector results or if vector search failed
+    console.log('No relevant vector chunks found, trying text search');
+    try {
+      // Since your searchFAQChunks function signature may have changed,
+      // make sure you're passing the right parameters
+      const textResults = await searchFAQChunks(message, count);
+      
+      if (textResults && textResults.length > 0) {
+        console.log(`Text search found ${textResults.length} relevant chunks`);
+        return textResults.map(chunk => ({
+          content: chunk.content.trim(),
+          heading: chunk.heading || 'General Information',
+          category: chunk.category || 'General',
+          section: chunk.section || 'Information',
+          similarity: 0.5 // Default similarity for text search results
+        }));
+      } else {
+        console.log('Text search found no results either');
+      }
+    } catch (textError) {
+      console.error('Text search error in findRelevantChunks:', textError);
+    }
+    
+    // If both searches failed or returned no results, return empty array
+    console.log('No relevant chunks found by any search method');
+    return [];
+  } catch (error) {
+    console.error('Error finding relevant chunks:', error);
+    return []; // Return empty array if search fails
+  }
+}
+
+// Helper function to check if vector search is available
+async function checkVectorSupport(): Promise<boolean> {
+  try {
+    // Check if pgvector extension is enabled
+    const extensionResult = await db.execute(sql`
+      SELECT COUNT(*) as count FROM pg_extension WHERE extname = 'vector'
+    `);
+    
+    const hasExtension = (extensionResult as any[])[0]?.count > 0;
+    
+    if (!hasExtension) {
+      return false;
+    }
+    
+    // Check if our table has an embedding column
+    const columnResult = await db.execute(sql`
+      SELECT COUNT(*) as count
+      FROM information_schema.columns
+      WHERE table_name = 'faq_chunks' 
+        AND column_name = 'embedding'
+    `);
+    
+    return (columnResult as any[])[0]?.count > 0;
+  } catch (error) {
+    console.error('Error checking vector support:', error);
+    return false;
   }
 }

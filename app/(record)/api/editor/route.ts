@@ -1,18 +1,20 @@
 // app/api/editor/route.ts
-import { createClient } from '@supabase/supabase-js';
 import { auth } from '@/app/(auth)/auth';
-import { getRecordById, getRecordsByUserId, updateDraftById, deleteDraftById, insertDocument, saveDraftAndReasoning } from '@/lib/db/queries';
+import { 
+  getRecordById, 
+  getRecordsByUserId, 
+  updateDraftById, 
+  deleteDraftById, 
+  insertDocument, 
+  saveDraftAndReasoning,
+  findRelevantChunks // Import the new function
+} from '@/lib/db/queries';
 import { generateEditorContent } from '@/lib/editor/content';
 import { google } from '@ai-sdk/google';
-import { embed, generateText } from 'ai';
+import { generateText } from 'ai';
 import type { JSONContent } from 'novel';
-import { ApplicationError } from '@/lib/errors';
 import { customModel } from '@/lib/ai';
 
-const chatModel = google("gemini-2.0-flash") ;
-// const supabaseUrl = process.env.SUPABASE_URL;
-// const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const embeddingModel = "gemini-embedding-exp-03-07";
 
 export async function GET(req: Request) {
   try {
@@ -46,7 +48,6 @@ export async function GET(req: Request) {
       });
     }
 
-
     return new Response(JSON.stringify(record), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -69,10 +70,6 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/json' }
     });
   }
-
-  // if (!supabaseUrl || !supabaseServiceKey) {
-  //   throw new ApplicationError('Missing Supabase environment variables');
-  // }
 
   // Parse request body
   const body = await req.json();
@@ -135,43 +132,29 @@ export async function POST(req: Request) {
 
     // Generate and save AI draft if requested
     if (generateDraft) {
-      // let relevantChunks = Array.isArray(record.relevantChunks) ? record.relevantChunks : [];
-      let relevantChunks: any[] = [];
+      // Start with existing relevantChunks or empty array
+      let relevantChunks = Array.isArray(record.relevantChunks) ? record.relevantChunks : [];
       let relatedReplies: { message: string, reply: string }[] = [];
 
-      // // If no relevantChunks, generate them
-      // if (relevantChunks.length === 0) {
-      //   const searchText = `${record.message}`.replaceAll('\n', ' ');
-      //   const { embedding } = await embed({ model: customModel("gemini-2.0-flash"), value: searchText });
-
-      //   try {
-      //     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-      //     const { data: fetchedChunks, error: matchError } = await supabaseClient.rpc('match_page_sections', {
-      //       embedding,
-      //       match_threshold: 0.80,  
-      //       match_count: 3,
-      //       min_content_length: 50
-      //     });
-
-      //     if (matchError || !fetchedChunks) {
-      //       console.error('Error matching page sections:', matchError);
-      //       return new Response('Error finding relevant information', { status: 500 });
-      //     }
-
-      //     relevantChunks = fetchedChunks.map((chunk: any) => ({
-      //       content: chunk.content.trim(),
-      //       heading: chunk.heading || 'General Information',
-      //       similarity: Math.round(chunk.similarity * 100) / 100
-      //     }));
-      //     console.log('Relevant chunks:', relevantChunks);
-      //   } catch (error) {
-      //     console.error('Error fetching chunks from Supabase:', error);
-      //     return new Response(JSON.stringify({ error: 'Failed to fetch relevant chunks from Supabase' }), {
-      //       status: 500,
-      //       headers: { 'Content-Type': 'application/json' }
-      //     });
-      //   }
-      // }
+      // If no relevantChunks, generate them using findRelevantChunks
+      if (relevantChunks.length === 0) {
+        try {
+          console.log('Finding relevant chunks for message');
+          
+          // Use the findRelevantChunks function from queries.ts
+          relevantChunks = await findRelevantChunks(
+            record.message,  // The message to find matches for
+            0.70,           // Similarity threshold (adjust as needed)
+            5               // Number of chunks to return
+          );
+          
+          console.log('Found relevant chunks:', relevantChunks);
+        } catch (error) {
+          console.error('Error finding relevant chunks:', error);
+          // Continue even if chunk finding fails - we'll still try to generate a draft
+          relevantChunks = [];
+        }
+      }
 
       try {
         // SIMILAR EMAILS
@@ -201,7 +184,7 @@ export async function POST(req: Request) {
 
         const relatedEmailIds = topMatches.map(match => match.emailRecord.id);
 
-        // Save the related email IDs
+        // Save the related email IDs and relevant chunks
         await insertDocument({ recordId, relevantChunks, topMatches: relatedEmailIds });
       } catch (error) {
         console.error('Error handling similar emails:', error);
@@ -226,10 +209,9 @@ export async function POST(req: Request) {
             `EXAMPLE ${index + 1}:\nOriginal email: ${item.message}\nReply: ${item.reply}\n`
           ).join('\n');
       }
-      // console.log('formattedRelatedReplies are here:', formattedRelatedReplies);
 
       try {
-        const rules = `You are representing as a URA official helping to draft email responses. You do not have to explicitly state your role. Abide by the following rules when writing.\n\n
+        const rules = `You are representing as a McDonald's official helping to draft email responses. You do not have to explicitly state your role. Abide by the following rules when writing.\n\n
         Use simple language.\n
         Avoid AI-giveaway phrases.\n
         Be direct and concise.\n
