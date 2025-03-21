@@ -80,7 +80,7 @@ export default function OneMapPage() {
           zoom={12}
           center={[1.3521, 103.8198]} // Center of Singapore
           locations={transformedLocations}
-          generateRandomCoordinates={true} // Enable this since all locations have the same coordinates
+          generateRandomCoordinates={false} // Enable this since all locations have the same coordinates
           showPopups={true}
         />
       )}
