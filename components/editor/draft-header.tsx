@@ -1,12 +1,32 @@
 'use client';
 
 import { ModelSelector } from '@/components/model-selector';
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { MailPlus, FileText, X } from 'lucide-react';
+import Select from 'react-select';
+import { components } from 'react-select'
 import CSVChunksProcessor from './csv-chunks';
 
 // Remove the imported createNewRecord function from queries.ts
+
+const [outlets, setOutlets] = useState<any[]>([]); // State to hold the outlets data
+
+useEffect(() => {
+  const fetchOutlets = async () => {
+    try {
+      const response = await fetch('@/public/outlets.json'); // Update with your JSON path
+      if (!response.ok) {
+        throw new Error('Failed to load outlets data');
+      }
+      const data = await response.json();
+      setOutlets(data);
+    } catch (error) {
+      console.error('Error loading outlets:', error);
+    }
+  };
+  fetchOutlets();
+}, []);
 
 function PureDraftHeader({
   selectedModelId,
@@ -142,7 +162,7 @@ function PureDraftHeader({
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-semibold">Create New Record</h2>
-              <button 
+              <button
                 onClick={closeNewRecordModal}
                 className="p-1 rounded-full hover:bg-gray-100"
               >
@@ -182,14 +202,32 @@ function PureDraftHeader({
                 <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700">
                   Subcategory
                 </label>
-                <input
-                  type="text"
+                <Select
                   id="subcategory"
                   name="subcategory"
-                  value={newRecord.subcategory}
-                  onChange={handleInputChange}
+                  value={
+                    newRecord.subcategory
+                      ? { value: newRecord.subcategory, label: newRecord.subcategory }
+                      : null
+                  }
+                  onChange={(selectedOption) => {
+                    setNewRecord((prev) => ({
+                      ...prev,
+                      subcategory: selectedOption ? selectedOption.label : '',
+                    }));
+                  }}
+                  options={outlets}
+                  placeholder="Search for an outlet"
+                  isSearchable={true}
+                  components={{
+                    IndicatorSeparator: () => null, // Hide the separator
+                    DropdownIndicator: () => (
+                      <span className="text-gray-500">
+                        <X className="h-5 w-5" />
+                      </span>
+                    ),
+                  }}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter subcategory"
                 />
               </div>
             </div>
@@ -201,7 +239,7 @@ function PureDraftHeader({
                 Cancel
               </button>
               <button
-                onClick={() => handleSubmitNewRecord()}
+                onClick={handleSubmitNewRecord}
                 className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 disabled={!newRecord.message || isSubmitting}
               >
