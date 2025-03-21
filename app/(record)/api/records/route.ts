@@ -1,7 +1,8 @@
 import { auth } from '@/app/(auth)/auth';
 import { generateText } from 'ai';
-import { getRecordsByUserId, updateRecordSummary, updateRecordTopics, saveRecordsByUserId } from '@/lib/db/queries';
+import { getRecordsByUserId, updateRecordSummary, updateRecordTopics, saveRecordsByUserId, insertNewRecord } from '@/lib/db/queries';
 import { customModel } from "@/lib/ai";
+import { NextRequest } from 'next/server';
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -47,18 +48,57 @@ export async function GET(req: Request) {
   return Response.json(records);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const session = await auth();
-  const url = new URL(req.url);
 
   if (!session || !session.user) {
     return Response.json('Unauthorized!', { status: 401 });
   }
-  await saveRecordsByUserId({ id: session.user.id!, samples: 13 });
 
-  return Response.json('Records saved!');
+  try {
+    // Check if this is a request to generate sample records
+    const url = new URL(req.url);
+    const generateSamples = url.searchParams.get('generateSamples') === 'true';
 
+    if (generateSamples) {
+      // Original functionality to generate sample records
+      await saveRecordsByUserId({ id: session.user.id!, samples: 13 });
+      return Response.json({ message: 'Sample records generated successfully' });
+    } else {
+      // New functionality to create a single record
+      const body = await req.json();
+      
+      // Extract required fields from the request body
+      const { message, category, subcategory } = body;
+      
+      // Validate required fields
+      if (!message) {
+        return Response.json(
+          { message: 'Message is required' },
+          { status: 400 }
+        );
+      }
+      
+      // Call the database function to insert the record
+      const newRecord = await insertNewRecord({
+        userId: session.user.id!,
+        message,
+        category,
+        subcategory
+      });
+      
+      // Return the created record
+      return Response.json(newRecord);
+    }
+  } catch (error) {
+    console.error('Error in POST /api/records:', error);
+    return Response.json(
+      { message: 'Failed to process request' },
+      { status: 500 }
+    );
+  }
 }
+
 
 // Function to generate summary using OpenAI
 async function createSummaryAndTopics(message: string): Promise<{ summary: string, evergreen_topics: string[] }> {

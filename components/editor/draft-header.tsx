@@ -4,7 +4,9 @@ import { ModelSelector } from '@/components/model-selector';
 import { memo, useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { MailPlus, FileText, X } from 'lucide-react';
-import CSVChunksProcessor from './csv-chunks'; // You'll create this component
+import CSVChunksProcessor from './csv-chunks';
+
+// Remove the imported createNewRecord function from queries.ts
 
 function PureDraftHeader({
   selectedModelId,
@@ -17,23 +19,72 @@ function PureDraftHeader({
 }
 ) {
   const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
+  const [isNewRecordModalOpen, setIsNewRecordModalOpen] = useState(false);
+  const [newRecord, setNewRecord] = useState({
+    message: '',
+    category: '',
+    subcategory: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleGenerateRecord = async () => {
-    // Generate a new record using the userId
-    // Get the first record from the array
-    const response = await fetch(`/api/records`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId })
-    });
+  const closeNewRecordModal = () => {
+    setIsNewRecordModalOpen(false);
+    setNewRecord({ message: '', category: '', subcategory: '' });
+  };
 
-    // Do something with the generated record
-    console.log('Generated new record:', response);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewRecord(prev => ({ ...prev, [name]: value }));
+  };
 
-    // Here you would typically:
-    // 1. Save to your state/store
-    // 2. Post to your API
-    // 3. Update UI accordingly
+  // Combined function to open the modal and handle submission
+  const handleSubmitNewRecord = async () => {
+    // If the modal isn't open yet, just open it
+    if (!isNewRecordModalOpen) {
+      setIsNewRecordModalOpen(true);
+      return;
+    }
+    
+    // Otherwise, submit the form if there's a message
+    if (!newRecord.message) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/records', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: newRecord.message,
+          category: newRecord.category || undefined,
+          subcategory: newRecord.subcategory || undefined
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create record');
+      }
+
+      const result = await response.json();
+      console.log('Created new record:', result);
+      
+      // Close the modal and reset form
+      closeNewRecordModal();
+      
+      // Here you would typically:
+      // 1. Update UI or state with new record
+      // 2. Show success notification
+      // 3. Navigate to the new record if needed
+      
+    } catch (error) {
+      console.error('Failed to create record:', error);
+      // Handle error (show error message to user)
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const openCSVModal = () => {
@@ -54,7 +105,7 @@ function PureDraftHeader({
         />
         <button
           className="order-2 md:order-1 p-1.5 rounded-md border"
-          onClick={handleGenerateRecord}>
+          onClick={handleSubmitNewRecord}>
           <MailPlus className="h-5 w-5" />
         </button>
         <button
@@ -80,6 +131,82 @@ function PureDraftHeader({
             </div>
             <div className="overflow-y-auto flex-grow p-4">
               <CSVChunksProcessor />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Record Modal */}
+      {isNewRecordModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-semibold">Create New Record</h2>
+              <button 
+                onClick={closeNewRecordModal}
+                className="p-1 rounded-full hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+                  Message
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  value={newRecord.message}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter message content..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  id="category"
+                  name="category"
+                  value={newRecord.category}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter category"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700">
+                  Subcategory
+                </label>
+                <input
+                  type="text"
+                  id="subcategory"
+                  name="subcategory"
+                  value={newRecord.subcategory}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter subcategory"
+                />
+              </div>
+            </div>
+            <div className="p-4 border-t flex justify-end space-x-3">
+              <button
+                onClick={closeNewRecordModal}
+                className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSubmitNewRecord()}
+                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                disabled={!newRecord.message || isSubmitting}
+              >
+                {isSubmitting ? 'Creating...' : 'Create Record'}
+              </button>
             </div>
           </div>
         </div>

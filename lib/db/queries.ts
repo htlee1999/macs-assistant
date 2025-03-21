@@ -1096,3 +1096,84 @@ export async function testEmbedding(faqId: string) {
     };
   }
 }
+
+export async function insertNewRecord(input: { 
+  userId: string; 
+  message: string; 
+  category?: string; 
+  subcategory?: string; 
+}): Promise<DatabaseRecord> {
+  try {
+    // Generate a random ID for the new record
+    const id = randomUUID();
+    const now = new Date();
+    
+    // Create a new record object with minimum required fields
+    // and default values for optional fields to match schema requirements
+    const newRecord = {
+      id,
+      message: input.message,
+      sectionCode: ['CX', 'QA', 'NU', 'MK', 'OP', 'PR'][Math.floor(Math.random() * 6)],
+      actionOfficer1: input.userId,
+      actionOfficer2: null,
+      creationOfficer: input.userId,
+      caseType: 'Inquiry',
+      channel: 'Email',
+      category: input.category || '', // Empty string instead of null
+      subcategory: input.subcategory || '', // Empty string instead of null
+      outcome: 'Open',
+      replyDate: null,
+      reply: null,
+      planningArea: null,
+      location: null,
+      locationX: null,
+      locationY: null,
+      creationDate: now,
+      receiveDate: now,
+      draft: null,
+      summary: null,
+      evergreen_topics: input.category ? [input.category] : [],
+      reasoning: null,
+      relevantChunks: '[]', // String instead of parsed JSON
+      relatedEmails: []
+    };
+    
+    // Insert the new record into the database
+    await db.insert(record).values(newRecord);
+    
+    // Format the response to match the DatabaseRecord interface
+    const typedRecord: DatabaseRecord = {
+      id: newRecord.id,
+      message: newRecord.message,
+      sectionCode: newRecord.sectionCode,
+      actionOfficer1: newRecord.actionOfficer1 || '-',
+      actionOfficer2: newRecord.actionOfficer2,
+      creationOfficer: newRecord.creationOfficer,
+      caseType: newRecord.caseType,
+      channel: newRecord.channel,
+      category: newRecord.category,
+      subcategory: newRecord.subcategory,
+      outcome: newRecord.outcome,
+      replyDate: newRecord.replyDate,
+      reply: newRecord.reply,
+      planningArea: newRecord.planningArea,
+      location: newRecord.location,
+      locationX: newRecord.locationX,
+      locationY: newRecord.locationY,
+      creationDate: newRecord.creationDate,
+      receiveDate: newRecord.receiveDate,
+      draft: null,
+      summary: newRecord.summary,
+      evergreen_topics: newRecord.evergreen_topics,
+      reasoning: newRecord.reasoning,
+      relevantChunks: [],
+      relatedEmails: newRecord.relatedEmails,
+    };
+    
+    console.log('Successfully created new record:', id);
+    return typedRecord;
+  } catch (error) {
+    console.error('Error inserting record into database:', error);
+    throw error;
+  }
+}
