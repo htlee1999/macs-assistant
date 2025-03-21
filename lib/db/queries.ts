@@ -210,7 +210,7 @@ export async function getRecordsByUserId({ id }: { id: string }): Promise<Databa
 
     if (records.length === 0) {
       console.log('No records found, saving new records...');
-      await saveRecordsByUserId({ id, samples: 20 });
+      await saveRecordsByUserId({ id, samples: 10 });
       records = await db
         .select()
         .from(record)

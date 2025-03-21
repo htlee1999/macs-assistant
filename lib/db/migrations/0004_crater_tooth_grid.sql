@@ -1,6 +1,6 @@
--- DROP TABLE IF EXISTS "Record";
--- DROP TABLE IF EXISTS "Headlines";
--- DROP TABLE IF EXISTS "Prompts";
+DROP TABLE IF EXISTS "Record"; 
+DROP TABLE IF EXISTS "Headlines"; 
+-- DROP TABLE IF EXISTS "faq_chunks"; 
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
@@ -13,27 +13,30 @@ CREATE TABLE IF NOT EXISTS "User" (
 -- Create the "Record" table
 CREATE TABLE IF NOT EXISTS "Record" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  "case_description" text NOT NULL,
-  "section_code" text NOT NULL,
-  "action_officer1" uuid NOT NULL,
-  "action_officer2" uuid,
-  "creation_officer" uuid,
-  "case_type_descr" text NOT NULL,
-  "channel_descr" text NOT NULL,
-  "business_descr" text NOT NULL,
-  "detailed_business_descr" text,
-  "decision_descr" text,
-  "final_reply_date_time" timestamp,
-  "reply_content" text,
-  "planning_area_descr" text,
+  "message" text NOT NULL,
+  "sectionCode" text NOT NULL,
+  "actionOfficer1" uuid NOT NULL,
+  "actionOfficer2" uuid,
+  "creationOfficer" uuid,
+  "caseType" text NOT NULL,
+  "channel" text NOT NULL,
+  "category" text NOT NULL,
+  "subcategory" text,
+  "outcome" text NOT NULL,
+  "replyDate" timestamp,
+  "reply" text,
+  "planningArea" text,
   "location" text,
-  "location_x" text,
-  "location_y" text,
+  "locationX" text,
+  "locationY" text,
   "draft" jsonb,
   "summary" text,
   "reasoning" text,
-  "creation_date_time" timestamp NOT NULL,
-  "receive_date_time" timestamp NOT NULL
+  "creationDate" timestamp NOT NULL,
+  "receiveDate" timestamp NOT NULL,
+  "relevantChunks" jsonb,
+  "relatedEmails" text,
+  "evergreenTopics" text
 );
 
 -- Add foreign key constraint for userId (assuming "User" table exists)
