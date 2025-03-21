@@ -1,239 +1,180 @@
-import { generateUUID } from '@/lib/utils'; 
-
-// Helper function to get a random item from an array
-function getRandomItem<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-// Message generator function for McDonald's FAQ-related queries
-function generateMcDonaldsMessage(category: string, section: string): { message: string, reply: string | null } {
-  // Templates for customer messages based on FAQ categories
-  const messageTemplates: { [key: string]: { [key: string]: string[] } } = {
-    "Food Quality": {
-      "Ingredients": [
-        "What ingredients do you use in your {item}? I'm concerned about allergens.",
-        "Are your {item} made with real meat or is it processed?",
-        "Do you use any artificial preservatives in your {item}?",
-        "I'd like to know the source of ingredients for your {item}."
-      ],
-      "Preparation": [
-        "How are your {item} prepared? Are they fresh or frozen?",
-        "Do you cook {item} in the same oil as other products?",
-        "Is the {item} made fresh daily or prepared in advance?",
-        "What's your cooking process for the {item}?"
-      ]
+export async function generateMcDonaldsFAQQuestions() {
+  // Define questions based on the categories and sections in the CSV
+  const questions = [
+    // Food Category Questions
+    {
+      category: "Food",
+      section: "Nutri-Grade",
+      question: "Why don't my Frappes come with whipped cream anymore?",
+      messageTemplate: "I ordered a Mocha Frappe yesterday and noticed it didn't have any whipped cream. When did this change happen?"
     },
-    "Nutrition": {
-      "Dietary Info": [
-        "I'm on a low-carb diet. What options do you have besides the {item}?",
-        "How many calories are in a {item}?",
-        "Is the {item} suitable for someone with a gluten intolerance?",
-        "What's the sodium content in your {item}?"
-      ],
-      "Allergens": [
-        "Does your {item} contain nuts? I have a severe allergy.",
-        "Is your {item} dairy-free?",
-        "Can you tell me all allergens present in the {item}?",
-        "I have a shellfish allergy. Is it safe for me to eat the {item}?"
-      ]
+    {
+      category: "Food",
+      section: "Nutri-Grade",
+      question: "Can I request to add whipped cream to my Frappe as an add-on?",
+      messageTemplate: "I really miss having whipped cream on my Frappe. Is there any way I can pay extra to add it?"
     },
-    "Menu Options": {
-      "Availability": [
-        "Is the {item} available all day or only during breakfast hours?",
-        "When will you bring back the {item} to the menu?",
-        "Do all locations serve the {item} or is it only at select restaurants?",
-        "I can't find the {item} on your app. Is it still available?"
-      ],
-      "Customization": [
-        "Can I customize my {item} to remove onions?",
-        "Is it possible to order the {item} without sauce?",
-        "Can I substitute the bun on my {item} for a lettuce wrap?",
-        "Do you charge extra if I add bacon to my {item}?"
-      ]
+    {
+      category: "Food",
+      section: "Nutri-Grade",
+      question: "Why does the Iced Latte taste different now?",
+      messageTemplate: "I've been getting Iced Lattes from McDonald's for years, but they taste different now. They're not sweet anymore. What changed?"
     },
-    "Restaurant Experience": {
-      "Service": [
-        "The service was slow when I ordered a {item} at your Main Street location.",
-        "Your staff was very helpful when I had questions about the {item}.",
-        "I'm disappointed with how my {item} was served today.",
-        "The employee was rude when I asked for a fresh {item}."
-      ],
-      "Cleanliness": [
-        "The dining area wasn't clean when I came in for a {item} today.",
-        "I found a hair in my {item} at your downtown location.",
-        "Your restaurant was spotless when I came in for a {item} yesterday.",
-        "The table was sticky when I sat down to eat my {item}."
-      ]
+    {
+      category: "Food",
+      section: "General",
+      question: "What vegetarian options do you offer?",
+      messageTemplate: "I'm looking to reduce my meat consumption. What vegetarian-friendly items do you have on your menu?"
     },
-    "Value & Pricing": {
-      "Deals": [
-        "Are there any current promotions for the {item}?",
-        "Is the {item} included in your value meal options?",
-        "When will the BOGO deal for {item} return?",
-        "Can I use a coupon for the {item} even if it's already discounted?"
-      ],
-      "Price Concerns": [
-        "Why did the price of the {item} increase recently?",
-        "The {item} is cheaper at other locations. Why is it more expensive here?",
-        "Is the {item} always this expensive or is it a temporary price?",
-        "I feel the {item} isn't worth the current price point."
-      ]
+    {
+      category: "Food",
+      section: "General",
+      question: "Can I request full-cream milk instead of low-fat milk in my coffee?",
+      messageTemplate: "I prefer the taste of full-cream milk in my coffee. Is it possible to request this for my McCafé drinks?"
+    },
+    
+    // The McDonald's App Questions
+    {
+      category: "The McDonald's app",
+      section: "Mobile Ordering via My McDonald's App",
+      question: "How do I use the McDonald's App to place an order?",
+      messageTemplate: "I just downloaded the McDonald's App but I'm not sure how to place an order. Can you walk me through the process?"
+    },
+    {
+      category: "The McDonald's app",
+      section: "Mobile Ordering via My McDonald's App",
+      question: "How do I know when my mobile order is ready for pickup?",
+      messageTemplate: "I placed a mobile order through the app. How will I know when it's ready to be picked up?"
+    },
+    {
+      category: "The McDonald's app",
+      section: "Mobile Ordering via My McDonald's App",
+      question: "Can I save my payment card for future use in the app?",
+      messageTemplate: "I'd like to save my credit card details in the McDonald's app for faster checkout. Is this possible and is it secure?"
+    },
+    {
+      category: "The McDonald's app",
+      section: "Account Related",
+      question: "What should I do if I forget my password?",
+      messageTemplate: "I can't remember my McDonald's app password and can't log in. How can I reset it?"
+    },
+    {
+      category: "The McDonald's app",
+      section: "MyMcDonald's Rewards",
+      question: "How do I earn rewards points?",
+      messageTemplate: "I just started using the McDonald's app. How exactly do I earn rewards points and what can I redeem them for?"
+    },
+    
+    // Celebrations & Parties Questions
+    {
+      category: "Celebrating Birthdays",
+      section: "Parties at McDonald's",
+      question: "How do I organize a birthday party at McDonald's?",
+      messageTemplate: "My son's birthday is coming up next month, and he loves McDonald's. What do I need to do to organize a party at one of your restaurants?"
+    },
+    {
+      category: "Celebrating Birthdays",
+      section: "Parties at McDonald's",
+      question: "How is the birthday party conducted?",
+      messageTemplate: "I'm considering booking a birthday party at McDonald's. What's the typical schedule and what activities are included?"
+    },
+    {
+      category: "Celebrating Birthdays",
+      section: "Parties at Home",
+      question: "Why does my Party Birthday Cake have a different design?",
+      messageTemplate: "I ordered a McDonald's birthday party package for home delivery, but the cake design is different from what I saw on the website. Is this normal?"
+    },
+    {
+      category: "Celebrating Birthdays",
+      section: "Parties at Home",
+      question: "How can I get Party Gift Boxes?",
+      messageTemplate: "Can I purchase McDonald's party gift boxes separately without ordering a full party package?"
+    },
+    
+    // Delivery Service Questions
+    {
+      category: "McDelivery® Service",
+      section: "General",
+      question: "Why can't I order McDelivery using a Guest account anymore?",
+      messageTemplate: "I used to be able to order McDelivery without creating an account, but now it seems I need to register. Why was this changed?"
+    },
+    {
+      category: "GrabFood/foodpanda/deliveroo Orders",
+      section: "Delivery Service",
+      question: "Why can't I add delivery notes for condiments on third-party platforms?",
+      messageTemplate: "When I order McDonald's through GrabFood, I can't leave notes to request extra ketchup or other condiments. Why isn't this option available?"
+    },
+    
+    // Promotions Questions
+    {
+      category: "Promotions",
+      section: "LifeSG Credits",
+      question: "How do I redeem McDonald's products using LifeSG credits?",
+      messageTemplate: "I have some LifeSG credits and heard I can use them at McDonald's. How exactly do I redeem them for food?"
+    },
+    {
+      category: "Promotions",
+      section: "LifeSG Credits",
+      question: "Can I use LifeSG credits for delivery orders?",
+      messageTemplate: "I want to use my LifeSG credits for a McDonald's delivery order. Is this possible or can they only be used for in-store purchases?"
+    },
+    
+    // Drive-Thru Questions
+    {
+      category: "Drive-Thru",
+      section: "General",
+      question: "What benefits do I get from the Drive-Thru decal?",
+      messageTemplate: "I noticed there's a Drive-Thru decal available for my car windscreen. What benefits or perks do I get if I put it on my vehicle?"
+    },
+    
+    // Happy Meal Questions
+    {
+      category: "Happy Meal®",
+      section: "General",
+      question: "When will the new Happy Meal toys be available?",
+      messageTemplate: "My kids are excited about the Crocs Happy Meal toys. When will they be available in Singapore restaurants?"
     }
-  };
-
-  // Common McDonald's menu items to insert into templates
-  const menuItems = [
-    "Big Mac", "Quarter Pounder", "McChicken", "Filet-O-Fish", "McNuggets", 
-    "McFlurry", "French Fries", "Apple Pie", "Happy Meal", "Egg McMuffin",
-    "McDouble", "Chicken McNuggets", "McRib", "Sausage McMuffin", "Hash Browns"
   ];
-
-  // Generic reply templates that can work for most inquiries
-  const replyTemplates = [
-    "Thank you for your inquiry about our {item}. {categoryResponse}",
-    "We appreciate your question regarding the {item}. {categoryResponse}",
-    "Thanks for reaching out about our {item}. {categoryResponse}",
-    "We value your feedback about the {item}. {categoryResponse}"
-  ];
-
-  // Category-specific response snippets
-  const categoryResponses: { [key: string]: string[] } = {
-    "Food Quality": [
-      "At McDonald's, we take pride in the quality of our ingredients and we'd be happy to provide detailed information on our sourcing and preparation methods.",
-      "We maintain strict quality standards for all our menu items and can assure you that we use quality ingredients in our products.",
-      "Food safety and quality are our top priorities, and we follow rigorous procedures to ensure every meal meets our standards."
-    ],
-    "Nutrition": [
-      "We offer a variety of menu options to accommodate different dietary needs and preferences. Complete nutritional information is available on our website and mobile app.",
-      "We understand the importance of making informed food choices, which is why we provide detailed nutritional information for all our products.",
-      "We're committed to transparency about our food, including ingredients and nutritional content to help you make the best choices for your dietary needs."
-    ],
-    "Menu Options": [
-      "Our menu varies by location and time of day, but we strive to offer a range of options to satisfy our customers' preferences.",
-      "We regularly update our menu based on customer feedback and seasonal availability of ingredients.",
-      "We offer customization options for many of our menu items to ensure you get exactly what you're looking for."
-    ],
-    "Restaurant Experience": [
-      "We're committed to providing a positive dining experience and appreciate you taking the time to share your feedback, which helps us improve.",
-      "Customer satisfaction is important to us, and we continually train our staff to provide excellent service in a clean environment.",
-      "We hold our restaurants to high standards of cleanliness and service, and your experience matters to us."
-    ],
-    "Value & Pricing": [
-      "We strive to offer good value for money while maintaining the quality our customers expect from McDonald's.",
-      "Our pricing reflects our commitment to using quality ingredients while still providing affordable meal options.",
-      "We regularly offer promotions and deals through our app to provide additional value to our loyal customers."
-    ]
-  };
-
-  // Select random items for message generation
-  const selectedItem = getRandomItem(menuItems);
   
-  // Get message templates for the selected category/section
-  const messagesForCategory = messageTemplates[category]?.[section] || [];
-  
-  // Fallback if no messages found for this category/section
-  if (messagesForCategory.length === 0) {
-    return { 
-      message: `I have a question about McDonald's ${selectedItem}.`, 
-      reply: null 
-    };
-  }
-  
-  // Select a random message and insert menu item
-  const messageTemplate = getRandomItem(messagesForCategory);
-  const message = messageTemplate.replace(/{item}/g, selectedItem);
-  
-  // Randomly decide if this record has a reply
-  const hasReply = Math.random() > 0.7; 
-  
-  let reply = null;
-  if (hasReply) {
-    const replyTemplate = getRandomItem(replyTemplates);
-    const categoryResponse = getRandomItem(categoryResponses[category] || categoryResponses["Menu Options"]);
-    reply = replyTemplate
-      .replace(/{item}/g, selectedItem)
-      .replace(/{categoryResponse}/g, categoryResponse);
-  }
-
-  return { message, reply };
+  return questions;
 }
 
-// Random record generator function for McDonald's FAQ-related queries
-export function randomMcDonaldsRecordGenerator(id: string, x: number) {
-  // Categories and sections based on McDonald's FAQ structure
-  const categories = [
-    "Food Quality", 
-    "Nutrition", 
-    "Menu Options", 
-    "Restaurant Experience", 
-    "Value & Pricing"
-  ];
-  
-  const sectionsByCategory: { [key: string]: string[] } = {
-    "Food Quality": ["Ingredients", "Preparation", "Sourcing", "Standards"],
-    "Nutrition": ["Dietary Info", "Allergens", "Calorie Content", "Dietary Restrictions"],
-    "Menu Options": ["Availability", "Customization", "New Items", "Limited Time Offers"],
-    "Restaurant Experience": ["Service", "Cleanliness", "Atmosphere", "Drive-Thru"],
-    "Value & Pricing": ["Deals", "Price Concerns", "App Rewards", "Promotions"]
+// Function to generate realistic customer messages based on the question templates
+interface Question {
+  category: string;
+  section: string;
+  question: string;
+  messageTemplate: string;
+}
+
+export function generateCustomerMessage(questionObject: Question) {
+  return {
+    id: Math.random().toString(36).substring(2, 15),
+    message: questionObject.messageTemplate,
+    category: questionObject.category,
+    section: questionObject.section,
+    heading: questionObject.question,
+    creationDate: new Date(),
+    outcome: "Open"
   };
+}
 
-  // Other parameters for record generation
-  const caseTypes = ["Inquiry", "Complaint", "Feedback", "Question"];
-  const channels = ["Email", "Web Form", "Mobile App", "Social Media", "Call Center"];
-  const sectionCodes = ["CX", "QA", "NU", "MK", "OP", "PR"];
-  const locations = ["North Region", "South Region", "East Region", "West Region", "Central Region", "Online"];
-
-  const records = [];
-
-  for (let i = 0; i < x; i++) {
-    // Randomized values for each record
-    const creationDate = new Date();
-    creationDate.setDate(creationDate.getDate() - Math.floor(Math.random() * 30)); // Random date within last 30 days
-
-    const category = getRandomItem(categories);
-    const sections = sectionsByCategory[category] || ["General"];
-    const section = getRandomItem(sections);
-    
-    const hasReply = Math.random() > 0.3; // 70% chance of having a reply
-    const replyDate = hasReply ? 
-      new Date(creationDate.getTime() + (Math.floor(Math.random() * 48) + 1) * 60 * 60 * 1000) : // 1-48 hours after creation
-      null;
-
-    const outcome = hasReply ? "Replied" : Math.random() > 0.5 ? "Open" : "Pending";
-    
-    // Generate the message based on the category and section
-    const { message, reply } = generateMcDonaldsMessage(category, section);
-
-    const record = {
-      id: generateUUID(),
-      message,
-      sectionCode: getRandomItem(sectionCodes),
-      actionOfficer1: id,
-      actionOfficer2: Math.random() > 0.7 ? generateUUID().substring(0, 8) : null, // 30% chance of having a second officer
-      creationOfficer: id,
-      caseType: getRandomItem(caseTypes),
-      channel: getRandomItem(channels),
-      category,
-      subcategory: section, // Using section as subcategory
-      outcome,
-      replyDate,
-      reply,
-      planningArea: getRandomItem(locations),
-      location: getRandomItem(locations),
-      locationX: null,
-      locationY: null,
-      creationDate,
-      receiveDate: new Date(creationDate.getTime() - Math.floor(Math.random() * 12) * 60 * 60 * 1000), // 0-12 hours before creation
-      draft: null,
-      summary: null,
-      evergreen_topics: [category, section],
-      reasoning: null,
-      relevantChunks: [],
-      relatedEmails: [],
-    };
-
-    records.push(record);
-  }
-
-  return records;
+// Function to generate multiple customer messages
+export function generateMultipleCustomerMessages(count = 10) {
+  return generateMcDonaldsFAQQuestions()
+    .then(questions => {
+      // Randomly select questions if there are more than the requested count
+      let selectedQuestions = questions;
+      if (questions.length > count) {
+        selectedQuestions = [];
+        const indices = new Set<number>();
+        while (indices.size < count) {
+          indices.add(Math.floor(Math.random() * questions.length));
+        }
+        selectedQuestions = Array.from(indices).map(index => questions[index]);
+      }
+      
+      // Generate messages for each selected question
+      return selectedQuestions.map(question => generateCustomerMessage(question));
+    });
 }

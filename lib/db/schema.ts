@@ -78,8 +78,8 @@ export const faqChunks = pgTable('faq_chunks', {
   section: varchar('section', { length: 100 }).notNull(),
   heading: text('heading').notNull(),
   content: text('content').notNull(),
-  embedding: pgVectorColumn('embedding', { dimensions: 768 }), // Vector column is now properly defined
-  created_at: timestamp('created_at').defaultNow().notNull()
+  embedding: pgVectorColumn('embedding', { dimensions: 153 }), // Vector column is now properly defined
+  
 });
 
 export type FAQChunk = InferSelectModel<typeof faqChunks>;

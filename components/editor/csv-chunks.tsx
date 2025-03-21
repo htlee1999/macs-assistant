@@ -151,53 +151,69 @@ const CSVChunksProcessor: React.FC = () => {
     }
   };
 
+
   // Function to send batch to your API
-  const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
-    try {
-      // Mark this batch as processing
-      setBatchProcessing(prev => new Set([...prev, batchNumber]));
-      
-      // Create a new FormData object
-      const formData = new FormData();
-      
-      // Convert the batch back to CSV
-      const csvContent = Papa.unparse(batch);
-      
-      // Create a File object from the CSV content
-      const file = new File([csvContent], `batch_${batchNumber}.csv`, { type: "text/csv" });
-      
-      // Append the file to the FormData
-      formData.append("file", file);
-      
-      // Send the request with FormData
-      const response = await fetch('/api/csv-chunks', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to save batch #${batchNumber}`);
-      }
-      
-      const result = await response.json();
-      console.log(`Batch #${batchNumber} saved successfully:`, result);
-      
-      // Mark this batch as processed
-      setProcessedBatches(prev => new Set([...prev, batchNumber]));
-      setSuccessMessage(`Batch #${batchNumber} saved successfully with ${result.insertedCount || 'all'} items.`);
-    } catch (error) {
-      console.error(`Error saving batch #${batchNumber}:`, error);
-      setErrorMessage(error instanceof Error ? error.message : `Error saving batch #${batchNumber}`);
-    } finally {
-      // Remove this batch from processing state
-      setBatchProcessing(prev => {
-        const updated = new Set([...prev]);
-        updated.delete(batchNumber);
-        return updated;
-      });
+const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
+  try {
+    // Mark this batch as processing
+    setBatchProcessing(prev => new Set([...prev, batchNumber]));
+    
+    // Create a new FormData object
+    const formData = new FormData();
+    
+    // Convert the batch back to CSV
+    const csvContent = Papa.unparse(batch);
+    
+    // Create a File object from the CSV content
+    const file = new File([csvContent], `batch_${batchNumber}.csv`, { type: "text/csv" });
+    
+    // Append the file to the FormData
+    formData.append("file", file);
+    
+    // Send the request with FormData
+    const response = await fetch('/api/csv-chunks', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Failed to save batch #${batchNumber}`);
     }
-  };
+    
+    const result = await response.json();
+    console.log(`Batch #${batchNumber} saved successfully:`, result);
+    
+    // Mark this batch as processed
+    setProcessedBatches(prev => new Set([...prev, batchNumber]));
+    
+    // Display a more detailed success message that includes embedding test results
+    if (result.embeddingTest) {
+      const testResult = result.embeddingTest;
+      const testStatus = testResult.success && testResult.selfMatch ? 
+        "✅ Embeddings working correctly" : 
+        "⚠️ Embeddings may not be working properly";
+      
+      setSuccessMessage(
+        `Batch #${batchNumber} saved successfully with ${result.insertedCount || 'all'} items. ` +
+        `${testStatus}. Embedding Stats: ${result.embeddingStats?.itemsWithEmbeddings || 0} with embeddings, ` +
+        `${result.embeddingStats?.itemsWithoutEmbeddings || 0} without embeddings.`
+      );
+    } else {
+      setSuccessMessage(`Batch #${batchNumber} saved successfully with ${result.insertedCount || 'all'} items.`);
+    }
+  } catch (error) {
+    console.error(`Error saving batch #${batchNumber}:`, error);
+    setErrorMessage(error instanceof Error ? error.message : `Error saving batch #${batchNumber}`);
+  } finally {
+    // Remove this batch from processing state
+    setBatchProcessing(prev => {
+      const updated = new Set([...prev]);
+      updated.delete(batchNumber);
+      return updated;
+    });
+  }
+};
 
   // Function to process all batches sequentially
   const processAllBatches = async () => {

@@ -1,4 +1,8 @@
-DROP TABLE IF EXISTS "Record"; DROP TABLE IF EXISTS "Headlines"; DROP TABLE IF EXISTS "faq_chunks"; 
+DROP TABLE IF EXISTS "Record"; 
+DROP TABLE IF EXISTS "Headlines"; 
+DROP TABLE IF EXISTS "faq_chunks"; 
+
+CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS "User" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -13,8 +17,7 @@ CREATE TABLE IF NOT EXISTS "faq_chunks" (
   "section" varchar(100) NOT NULL,
   "heading" text NOT NULL,
   "content" text NOT NULL,
-  "embedding" vector(768), -- Add vector embedding column
-  "created_at" timestamp DEFAULT NOW() NOT NULL
+  "embedding" vector(1536) -- Add vector embedding column
 );
 
 -- Create vector search index if it doesn't exist
@@ -103,4 +106,3 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_userId ON "preferences"("userId");
 
 -- Create pgvector extension if it doesn't exist
-CREATE EXTENSION IF NOT EXISTS vector;

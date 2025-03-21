@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   if (!session || !session.user) {
     return Response.json('Unauthorized!', { status: 401 });
   }
-  await saveRecordsByUserId({ id: session.user.id!, samples: 2 });
+  await saveRecordsByUserId({ id: session.user.id!, samples: 13 });
 
   return Response.json('Records saved!');
 

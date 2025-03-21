@@ -43,6 +43,7 @@ const Referencing: React.FC<ReferencingProps> = ({ matches, reasoning, onSelect 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
 
+
   if (!matches) {
     return (
       <div className="flex items-center justify-center h-full p-4">
@@ -53,6 +54,7 @@ const Referencing: React.FC<ReferencingProps> = ({ matches, reasoning, onSelect 
 
   // Filter chunks with similarity > 0.8
   const highSimilarityChunks = matches;
+
 
   if (!highSimilarityChunks.length) {
     return (

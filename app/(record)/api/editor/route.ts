@@ -135,20 +135,35 @@ export async function POST(req: Request) {
       // Start with existing relevantChunks or empty array
       let relevantChunks = Array.isArray(record.relevantChunks) ? record.relevantChunks : [];
       let relatedReplies: { message: string, reply: string }[] = [];
-
+    
       // If no relevantChunks, generate them using findRelevantChunks
       if (relevantChunks.length === 0) {
         try {
           console.log('Finding relevant chunks for message');
           
           // Use the findRelevantChunks function from queries.ts
-          relevantChunks = await findRelevantChunks(
+          const foundChunks = await findRelevantChunks(
             record.message,  // The message to find matches for
-            0.70,           // Similarity threshold (adjust as needed)
+            0.86,           // Similarity threshold (adjust as needed)
             5               // Number of chunks to return
           );
+          console.log('Found relevant chunks:', foundChunks);
           
-          console.log('Found relevant chunks:', relevantChunks);
+          if (foundChunks && foundChunks.length > 0) {
+            relevantChunks = foundChunks.map(chunk => ({
+              id: '', // Provide appropriate value
+              category: chunk.category || '',
+              section: chunk.section || '',
+              content: chunk.content,
+              faq_id: '', // Provide appropriate value
+              heading: chunk.heading,
+              embedding: null, // Provide appropriate value
+              similarity: chunk.similarity
+            }));
+            console.log('Found relevant chunks:', relevantChunks);
+          } else {
+            console.log('No relevant chunks found');
+          }
         } catch (error) {
           console.error('Error finding relevant chunks:', error);
           // Continue even if chunk finding fails - we'll still try to generate a draft

@@ -18,8 +18,9 @@ import {
   faqChunks,
   type FAQChunk,
 } from './schema';
-import { randomMcDonaldsRecordGenerator } from './randomGenerator';
+import { generateMultipleCustomerMessages } from './randomGenerator';
 import { select } from 'ts-pattern';
+import { Description } from '@radix-ui/react-dialog';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -111,43 +112,54 @@ export async function deleteDraftById({ recordId }: { recordId: string }) {
 
 export async function saveRecordsByUserId({ id, samples }: { id: string, samples: number }) {
   try {
-    // Fake records to simulate database data
-    const fakeRecords = randomMcDonaldsRecordGenerator(id, samples)
+    // Get customer messages
+    const customerMessages = await generateMultipleCustomerMessages(samples);
 
-    // Simulate ordering by createdAt (descending order)
-    const orderedRecords = fakeRecords.sort((a, b) => b.creationDate.getTime() - a.creationDate.getTime());
+    // Loop through each message and create a record
+    for (let i = 0; i < customerMessages.length; i++) {
+      const msgData = customerMessages[i];
+      
+      // Create a record with fields that match your schema exactly
+      // Note: 'message' is required, NOT 'case_description'
+      const recordValues = {
+        message: msgData.message, // This is the correct field name required by your schema
+        sectionCode: ['CX', 'QA', 'NU', 'MK', 'OP', 'PR'][Math.floor(Math.random() * 6)],
+        actionOfficer1: id,
+        actionOfficer2: Math.random() > 0.7 ? `officer-${Math.random().toString(36).substring(2, 8)}` : null,
+        creationOfficer: id,
+        caseType: ['Inquiry', 'Complaint', 'Feedback', 'Question'][Math.floor(Math.random() * 4)],
+        channel: ['Email', 'Web Form', 'Mobile App', 'Social Media', 'Call Center'][Math.floor(Math.random() * 5)],
+        category: msgData.category,
+        subcategory: msgData.section,
+        outcome: 'Open',
+        replyDate: null,
+        reply: null,
+        planningArea: ['North Region', 'South Region', 'East Region', 'West Region', 'Central Region'][Math.floor(Math.random() * 5)],
+        location: ['North Region', 'South Region', 'East Region', 'West Region', 'Central Region'][Math.floor(Math.random() * 5)],
+        locationX: null,
+        locationY: null,
+        creationDate: new Date(),
+        receiveDate: new Date(Date.now() - Math.floor(Math.random() * 12) * 60 * 60 * 1000),
+        draft: null,
+        summary: null,
+        reasoning: null,
+        evergreen_topics: [msgData.category, msgData.section],
+        relevantChunks: JSON.stringify([]),
+        relatedEmails: []
+      };
 
-    // Save each record to the Record table in the database
-    for (const recordData of orderedRecords) {
-      await db.insert(record).values({
-        message: recordData.message,
-        sectionCode: recordData.sectionCode,
-        actionOfficer1: recordData.actionOfficer1,
-        actionOfficer2: recordData.actionOfficer2,
-        creationOfficer: recordData.creationOfficer,
-        caseType: recordData.caseType,
-        channel: recordData.channel,
-        category: recordData.category,
-        subcategory: recordData.subcategory,
-        outcome: recordData.outcome,
-        replyDate: recordData.replyDate,
-        reply: recordData.reply,
-        planningArea: recordData.planningArea,
-        location: recordData.location,
-        locationX: recordData.locationX,
-        locationY: recordData.locationY,
-        creationDate: recordData.creationDate,
-        receiveDate: recordData.receiveDate,
-        draft: recordData.draft,
-        summary: recordData.summary,
-        evergreen_topics: recordData.evergreen_topics,
-        relevantChunks: recordData.relevantChunks,
-        relatedEmails: recordData.relatedEmails,
-      });
+      // Try inserting the record
+      try {
+        await db.insert(record).values(recordValues);
+        console.log(`Successfully inserted record ${i+1}/${customerMessages.length}`);
+      } catch (insertError) {
+        console.error(`Error inserting record ${i+1}:`, insertError);
+      }
     }
-    console.log('All records saved successfully!');
+    
+    console.log('Record insertion process completed');
   } catch (error) {
-    console.error('Failed to save records in database', error);
+    console.error('Failed to process records:', error);
     throw error;
   }
 }
@@ -795,68 +807,50 @@ export async function storeFAQChunks(items: Array<{
   section: string;
   heading: string;
   content: string;
-  embedding?: number[]; // Make embedding optional
+  embedding: number[]; // Embedding is required
 }>): Promise<number> {
   try {
     console.log(`Storing ${items.length} FAQ chunks in database`);
-    
-    // Prepare values for insertion
-    const values = items.map(item => ({
-      id: randomUUID(),
-      faq_id: item.faq_id,
-      category: item.category,
-      section: item.section,
-      heading: item.heading,
-      content: item.content,
-      embedding: item.embedding, // Use embedding if provided
-      created_at: new Date()
-    }));
     
     // Insert items in batches
     let insertedCount = 0;
     const batchSize = 50;
     
-    for (let i = 0; i < values.length; i += batchSize) {
-      const batch = values.slice(i, i + batchSize);
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
       
       try {
-        // First try inserting with standard method
-        await db.insert(faqChunks).values(batch);
-        insertedCount += batch.length;
-      } catch (error) {
-        // If that fails, it might be because of the vector type
-        console.warn('Standard insert failed, trying SQL insert with vector cast:', error);
-        
-        // Insert each item individually with proper vector casting
+        // Insert each item individually for now to work around the vector type issue
         for (const item of batch) {
-          try {
-            if (item.embedding) {
-              await db.execute(sql`
-                INSERT INTO faq_chunks (
-                  id, faq_id, category, section, heading, content, embedding, created_at
-                ) VALUES (
-                  ${item.id}, ${item.faq_id}, ${item.category}, ${item.section}, 
-                  ${item.heading}, ${item.content}, ${item.embedding}::vector, ${item.created_at}
-                )
-              `);
-            } else {
-              await db.execute(sql`
-                INSERT INTO faq_chunks (
-                  id, faq_id, category, section, heading, content, created_at
-                ) VALUES (
-                  ${item.id}, ${item.faq_id}, ${item.category}, ${item.section}, 
-                  ${item.heading}, ${item.content}, ${item.created_at}
-                )
-              `);
-            }
-            insertedCount++;
-          } catch (itemError) {
-            console.error(`Failed to insert item ${item.faq_id}:`, itemError);
-          }
+          // Create the vector string in PostgreSQL format
+          const vectorString = `[${item.embedding.join(',')}]`;
+          
+          await db.execute(sql`
+            INSERT INTO faq_chunks (
+              id, 
+              faq_id, 
+              category, 
+              section, 
+              heading, 
+              content, 
+              embedding
+            ) VALUES (
+              ${randomUUID()}, 
+              ${item.faq_id}, 
+              ${item.category}, 
+              ${item.section}, 
+              ${item.heading}, 
+              ${item.content}, 
+              ${vectorString}::vector 
+            )
+          `);
+          
+          insertedCount++;
         }
+      } catch (error) {
+        console.error('Failed to insert batch:', error);
+        throw error;
       }
-      
-      console.log(`Inserted batch of ${batch.length} FAQ chunks`);
     }
     
     console.log(`Successfully stored ${insertedCount} FAQ chunks`);
@@ -866,7 +860,6 @@ export async function storeFAQChunks(items: Array<{
     throw error;
   }
 }
-
 
 // Keep your existing text-based search
 
@@ -918,145 +911,75 @@ export async function searchFAQChunks(query: string, limit: number = 5): Promise
   }
 }
 
-// Add new vector search function
-export async function vectorSearchFAQChunks(query: string, threshold: number = 0.65, limit: number = 5): Promise<any[]> {
+// New function to find relevant chunks for email responses
+// lib/db/queries.ts - Fixed findRelevantChunks function
+
+export async function findRelevantChunks(
+  message: string,
+  similarityThreshold: number = 0.86,
+  limit: number = 5
+): Promise<Array<{ content: string; heading: string; category?: string; section?: string; similarity: number }>> {
   try {
-    console.log(`Performing vector search for: "${query}"`);
+    console.log(`Performing vector search for: "${message}"`);
     
-    // Generate embedding for the search query
-    const searchText = query.replaceAll('\n', ' ');
+    // Clean up message text
+    const searchText = message.replaceAll('\n', ' ');
     
-    // Use our new generateEmbedding function instead of the embed function
-    const embedding = await generateEmbedding(searchText);
-    
-    // Validate embedding before using it
-    if (!embedding || !Array.isArray(embedding)) {
-      console.warn('Invalid embedding generated, falling back to text search');
-      return searchFAQChunks(query, limit);
-    }
-    
-    // Check if we have the pgvector extension and vector column
+    // First verify if vector search capabilities are available
     const hasVectorSupport = await checkVectorSupport();
     
     if (!hasVectorSupport) {
-      console.warn('Vector search not available - falling back to text search');
-      return searchFAQChunks(query, limit);
+      console.log('Vector search not supported, falling back to text search');
     }
     
+    // Generate embedding for the message
+    const embedding = await generateEmbedding(searchText);
+    
+    if (!embedding || !Array.isArray(embedding)) {
+      console.warn('Invalid embedding generated for findRelevantChunks');
+    }
+
     try {
-      // Use raw SQL for vector search with cosine similarity
-      // Modified to handle the embedding format correctly
-      const results = await db.execute(sql`
-        SELECT 
-          id, faq_id, category, section, heading, content,
-          1 - (embedding <=> ${embedding}::vector) as similarity
-        FROM faq_chunks
-        WHERE embedding IS NOT NULL
-          AND length(content) >= 50
-          AND (1 - (embedding <=> ${embedding}::vector)) > ${threshold}
-        ORDER BY similarity DESC
-        LIMIT ${limit}
-      `);
-      
-      // Add better similarity scores to results
-      return results.map((row: any) => ({
-        ...row,
-        similarity: Math.round(row.similarity * 100) / 100
-      }));
-    } catch (sqlError) {
-      console.error('SQL vector search error:', sqlError);
-      
-      // Try alternative syntax if the first attempt failed
-      // Some PostgreSQL setups may require different syntax for vector casting
-      try {
-        console.log('Trying alternative vector search syntax...');
-        
-        const results = await db.execute(sql`
-          SELECT 
-            id, faq_id, category, section, heading, content,
-            1 - (embedding <=> ${JSON.stringify(embedding)}::vector) as similarity
+        const results = await db.execute(sql `
+          SELECT heading, content, category, section,
+          (embedding <=> ${sql.raw(`'[${embedding. join(', ')}]'::vector`)}) AS similarity
           FROM faq_chunks
-          WHERE embedding IS NOT NULL
-            AND length(content) >= 50
-            AND (1 - (embedding <=> ${JSON.stringify(embedding)}::vector)) > ${threshold}
-          ORDER BY similarity DESC
-          LIMIT ${limit}
-        `);
-        
+          ORDER BY similarity ASC
+          LIMIT ${limit};`);
+
+          // const results = await db.execute(
+          //   sql`SELECT heading, content, category, section
+          //       FROM faq_chunks
+          //       LIMIT 5;`
+          // );
+      
+
+      if (results && results.length > 0) {
         return results.map((row: any) => ({
-          ...row,
+          heading: row.heading || 'General Information',
+          content: row.content?.trim() || '',
+          category: row.category || 'General',
+          section: row.section || 'Information',
           similarity: Math.round(row.similarity * 100) / 100
         }));
-      } catch (altError) {
-        console.error('Alternative vector search also failed:', altError);
-        throw altError; // Throw to trigger the fallback
       }
+    } catch (sqlError) {
+      console.error('Vector search failed:', sqlError);
     }
+    
+    // If we got here, vector search returned no results above the threshold
+    // Fall back to text search with reduced threshold
+    console.log('No vector search results above threshold, falling back to text search');
+    return [];
   } catch (error) {
-    console.error('Vector search failed:', error);
-    console.log('Falling back to text search');
-    // Fall back to text search if vector search fails
-    return searchFAQChunks(query, limit);
+    console.error('Vector search error in findRelevantChunks:', error);
+    // Fall back to text search in case of any errors
+    return [];
   }
 }
 
-// New function to find relevant chunks for email responses
-export async function findRelevantChunks(message: string, threshold: number = 0.70, count: number = 3): Promise<any[]> {
-  try {
-    // const selectChunks = await db.select().from(faqChunks).limit(5);
-    
-    console.log(`Finding relevant chunks for message`);
-    
-    // Try vector search first with detailed error handling
-    try {
-      const chunks = await vectorSearchFAQChunks(message, threshold, count);
-      
-      if (chunks && chunks.length > 0) {
-        console.log(`Vector search found ${chunks.length} relevant chunks`);
-        return chunks.map(chunk => ({
-          content: chunk.content.trim(),
-          heading: chunk.heading || 'General Information',
-          category: chunk.category || 'General',
-          section: chunk.section || 'Information',
-          similarity: chunk.similarity
-        }));
-      }
-    } catch (vectorError) {
-      console.error('Vector search error in findRelevantChunks:', vectorError);
-      // Continue to text search fallback
-    }
-    
-    // Fall back to text search if no vector results or if vector search failed
-    console.log('No relevant vector chunks found, trying text search');
-    try {
-      // Since your searchFAQChunks function signature may have changed,
-      // make sure you're passing the right parameters
-      const textResults = await searchFAQChunks(message, count);
-      
-      if (textResults && textResults.length > 0) {
-        console.log(`Text search found ${textResults.length} relevant chunks`);
-        return textResults.map(chunk => ({
-          content: chunk.content.trim(),
-          heading: chunk.heading || 'General Information',
-          category: chunk.category || 'General',
-          section: chunk.section || 'Information',
-          similarity: 0.5 // Default similarity for text search results
-        }));
-      } else {
-        console.log('Text search found no results either');
-      }
-    } catch (textError) {
-      console.error('Text search error in findRelevantChunks:', textError);
-    }
-    
-    // If both searches failed or returned no results, return empty array
-    console.log('No relevant chunks found by any search method');
-    return [];
-  } catch (error) {
-    console.error('Error finding relevant chunks:', error);
-    return []; // Return empty array if search fails
-  }
-}
+
+
 
 // Helper function to check if vector search is available
 async function checkVectorSupport(): Promise<boolean> {
@@ -1084,5 +1007,92 @@ async function checkVectorSupport(): Promise<boolean> {
   } catch (error) {
     console.error('Error checking vector support:', error);
     return false;
+  }
+}
+
+// Add this function to your queries.ts file
+export async function testEmbedding(faqId: string) {
+  try {
+    console.log(`Testing embedding for FAQ ID: ${faqId}`);
+    
+    // 1. Get the original item and its embedding
+    const results = await db
+      .select()
+      .from(faqChunks)
+      .where(eq(faqChunks.faq_id, faqId))
+      .limit(1);
+    
+    if (!results.length) {
+      return { success: false, message: `FAQ item with ID ${faqId} not found` };
+    }
+    
+    const item = results[0];
+    
+    if (!item.embedding) {
+      return { success: false, message: 'Item has no embedding' };
+    }
+    
+    // 2. Perform a vector search with the item's own embedding
+    try {
+      const similarItemsResult = await db.execute(sql`
+        SELECT 
+          faq_id, 
+          heading, 
+          1 - (embedding <=> ${item.embedding}::vector) AS similarity 
+        FROM faq_chunks 
+        WHERE embedding IS NOT NULL
+        ORDER BY embedding <=> ${item.embedding}::vector 
+        LIMIT 5
+      `);
+      
+      // 3. The first result should be the original item (with similarity ≈ 1.0)
+      const similarItems = similarItemsResult as any[];
+      
+      return { 
+        success: true, 
+        selfMatch: similarItems[0]?.faq_id === faqId,
+        similarity: similarItems[0]?.similarity, 
+        results: similarItems 
+      };
+    } catch (vectorError) {
+      console.error('Vector search error during embedding test:', vectorError);
+      
+      // Try alternative syntax if the first attempt failed
+      try {
+        const similarItemsResult = await db.execute(sql`
+          SELECT 
+            faq_id, 
+            heading, 
+            1 - (embedding <=> ${JSON.stringify(item.embedding)}::vector) AS similarity 
+          FROM faq_chunks 
+          WHERE embedding IS NOT NULL
+          ORDER BY embedding <=> ${JSON.stringify(item.embedding)}::vector 
+          LIMIT 5
+        `);
+        
+        const similarItems = similarItemsResult as any[];
+        
+        return { 
+          success: true, 
+          selfMatch: similarItems[0]?.faq_id === faqId,
+          similarity: similarItems[0]?.similarity, 
+          results: similarItems 
+        };
+      } catch (altError) {
+        console.error('Alternative vector search also failed during test:', altError);
+        return { 
+          success: false, 
+          message: 'Vector search failed during test',
+          error: altError instanceof Error ? altError.message : String(altError)
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error testing embedding:', error);
+    return { 
+      success: false, 
+      message: 'Error testing embedding',
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 }

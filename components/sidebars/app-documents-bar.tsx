@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/documents-bar';
 import Referencing from './referencing';
 import DocumentView from './view-docs';
-import { DocumentsIcon, EmailsIcon, CreateIcon, CrossIcon, BookOpenIcon } from '@/components/ui/icons';
+import { DocumentsIcon, EmailsIcon, CrossIcon, BookOpenIcon } from '@/components/ui/icons';
 import { JSONContent } from 'novel';
 
 interface RelevantChunk {
