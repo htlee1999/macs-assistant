@@ -25,7 +25,7 @@ export function SidebarUserNav({ user }: { user: User }) {
   const router = useRouter(); // Initialize router for navigation
 
   const handlePreferencesClick = () => {
-    router.push('/preferences'); // Navigate to preferences page
+    router.push('/OneMap'); // Navigate to preferences page
   };
 
   return (
@@ -59,7 +59,7 @@ export function SidebarUserNav({ user }: { user: User }) {
               className="cursor-pointer"
               onClick={handlePreferencesClick} // Trigger the navigation to the Preferences page
             >
-              Preferences
+              OneMap
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
