@@ -2,8 +2,6 @@ import { auth } from '@/app/(auth)/auth';
 import { getRecordById, updateOutcomeById, deleteDraftById, getOutcomeById } from '@/lib/db/queries';
 import { NextRequest } from 'next/server';
 
-
-
 export async function POST(req: Request) {
   try {
     // Authentication check

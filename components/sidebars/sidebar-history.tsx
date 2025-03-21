@@ -3,6 +3,8 @@ import Link from 'next/link';
 import type { User } from 'next-auth';
 import { useState, useMemo, useEffect, useCallback } from 'react'; 
 import useSWR, { mutate } from 'swr';
+import { useProcessorContext } from '@/components/daily-processor';
+import { fetcher } from '@/lib/utils'
 
 import {
   SidebarGroup,
@@ -24,7 +26,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import type { Record } from '@/lib/db/schema';
-import { fetcher } from '@/lib/utils';
 import { type EmailOutcome } from '../editor/status-selector';
 
 type GroupedRecords = {
@@ -39,6 +40,7 @@ type RecordItemProps = {
   record: Record;
   outcomeOverrides: Map<string, EmailOutcome>;
 };
+
 
 // Helper function to determine outcome from record
 const getRecordOutcome = (record: Record, outcomeOverride?: EmailOutcome): EmailOutcome => {
@@ -143,41 +145,6 @@ const FilterDropdown = ({ label, options, selectedValues, onSelectionChange }: F
 };
 
 export function SidebarHistory({ user }: { user: User | undefined }) {
-  const [hasGeneratedSummary, setHasGeneratedSummary] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const summaryGenerated = sessionStorage.getItem('summaryGenerated');
-      if (summaryGenerated) {
-        setHasGeneratedSummary(true); 
-      }
-    }
-  }, []);
-  
-  const {
-    data: history,
-    isLoading,
-  } = useSWR<Array<Record>>(
-    user 
-      ? hasGeneratedSummary 
-        ? '/api/records' 
-        : '/api/records?generateSummary=true' 
-      : null, 
-    fetcher,
-    {
-      fallbackData: [],
-      onSuccess: () => {
-        if (!hasGeneratedSummary) {
-          // Set the flag in sessionStorage after the first request
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('summaryGenerated', 'true');
-          }
-          setHasGeneratedSummary(true);
-        }
-      },
-    }
-  );
-
   const [searchQuery, setSearchQuery] = useState(''); 
   const [isSearchOpen, setIsSearchOpen] = useState(false); 
   const [filterType, setFilterType] = useState<'all' | 'drafts' | 'vetted' | 'replied'>('all');
@@ -190,11 +157,16 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
   const [outcomeOverrides, setOutcomeOverrides] = useState<Map<string, EmailOutcome>>(new Map());
 
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+  // Use useSWR hook with type annotations
+  const { data: records, isLoading } = useSWR<Array<Record>>('/api/records', fetcher);
+  
   // Expose the mutate function to window for global access
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).refreshSidebarHistory = () => {
-        console.log('Refreshing sidebar history...');
+        console.log('Refreshing sidebar records...');
         mutate('/api/records');
       };
     }
@@ -207,12 +179,12 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   }, []);
 
   useEffect(() => {
-    if (history && history.length > 0) {
+    if (records && records.length > 0) {
       setOutcomeOverrides(prev => {
         const newOverrides = new Map(prev);
         let hasChanges = false;
         
-        history.forEach(record => {
+        records.forEach(record => {
           const currentOverride = newOverrides.get(record.id);
           const actualOutcome = getRecordOutcome(record);
           if (currentOverride && currentOverride === actualOutcome) {
@@ -224,7 +196,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
         return hasChanges ? newOverrides : prev;
       });
     }
-  }, [history]);
+  }, [records]);
 
   // Function to manually update an outcome in the local state before API finishes
   const updateLocalOutcome = useCallback((recordId: string, outcome: EmailOutcome) => {
@@ -337,17 +309,17 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
   // Get unique options for each filter
   const filterOptions = useMemo(() => {
-    if (!history) return { sectionCode: [], channel: [], category: [] };
+    if (!records) return { sectionCode: [], channel: [], category: [] };
     
     return {
-      sectionCode: Array.from(new Set(history.map(record => record.sectionCode).filter(Boolean))),
-      channel: Array.from(new Set(history.map(record => record.channel).filter(Boolean))),
-      category: Array.from(new Set(history.map(record => record.category).filter(Boolean))),
+      sectionCode: Array.from(new Set(records.map(record => record.sectionCode).filter(Boolean))),
+      channel: Array.from(new Set(records.map(record => record.channel).filter(Boolean))),
+      category: Array.from(new Set(records.map(record => record.category).filter(Boolean))),
     };
-  }, [history]);
+  }, [records]);
 
   const filteredRecords = useMemo(() => {
-    let filtered = history || [];
+    let filtered = records || [];
   
     // Search query filter
     if (searchQuery.trim() !== '') {
@@ -374,7 +346,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     }
   
     return filtered;
-  }, [searchQuery, history, selectedFilters]);  
+  }, [searchQuery, records, selectedFilters]);  
 
   // Memoizing filteredRecords based on drafts/vetted/replied filter
   const filteredByType = useMemo(() => {

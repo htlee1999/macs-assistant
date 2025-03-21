@@ -513,6 +513,8 @@ export async function saveHeadlines(newHeadlines: {
   category: string;
   date_processed: Date;
   type: string;
+  topic?: string;
+  score?: string;
 }[]) {
   try {
     // Delete all existing headlines
@@ -535,6 +537,14 @@ export async function getHeadlines() {
     return currentHeadlines;
   } catch (error) {
     throw error;
+  }
+}
+
+export async function deleteHeadlines() {
+  try {
+    await db.delete(headline);
+  } catch (error) {
+    throw error
   }
 }
 

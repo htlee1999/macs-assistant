@@ -4,20 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useRouter } from 'next/navigation';
 import { generateUUID } from '@/lib/utils';
 import { DraftHeader } from '@/components/editor/draft-header';
+import { Headline } from '@/lib/db/schema'
+import { useProcessorContext } from '@/components/daily-processor';
 import * as Tabs from '@radix-ui/react-tabs';
 import '@/app/globals.css';
-
-interface Headline {
-  id: string;
-  title: string;
-  match_percent: number;
-  desc: string;
-  entities: string;
-  examples: string;
-  category: string;
-  date_processed: string;
-  type: 'today' | 'overall' | 'evergreen'; // assuming each headline has a 'type' field
-}
 
 const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   const router = useRouter();
@@ -25,84 +15,18 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
 
   // State hooks for headlines
   const [loading, setLoading] = useState<boolean>(true);
-  const [headlines, setHeadlines] = useState<Headline[]>([]);
   const [filteredToday, setFilteredToday] = useState<Headline[]>([]);
   const [filteredOverall, setFilteredOverall] = useState<Headline[]>([]);
-  const [filteredEvergreen, setFilteredEvergreen] = useState<Headline[]>([]);
+  const [filteredEvergreen, setFilteredEvergreen] = useState<{ [key: string]: Headline[] }>({});
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isAlertExpanded, setIsAlertExpanded] = useState<boolean>(false);
   const [expandedHeadline, setExpandedHeadline] = useState<string | null>(null);
+  const [expandedTopic, setExpandedTopic] = useState<string | null>(null); // Track expanded topics
+  const { headlines } = useProcessorContext();
 
-  // Memoize the triggerSaveNewHeadlines function with useCallback
-  // const triggerSaveNewHeadlines = useCallback(async () => {
-  //   try {
-  //     const res = await fetch('/api/headlines', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //     });
-
-  //     if (res.ok) {
-  //       console.log('New headlines saved');
-  //     } else {
-  //       console.error('Failed to save new headlines');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error saving new headlines:', error);
-  //   }
-  // }, []);
-
-  // Memoize the fetchHeadlines function with useCallback
-  // const fetchHeadlines = useCallback(async () => {
-  //   try {
-  //     const res = await fetch('/api/headlines', {
-  //       method: 'GET',
-  //       headers: {
-  //       'Content-Type': 'application/json',
-  //       },
-  //     });
-
-  //     if (res.ok) {
-  //       const data = await res.json();
-  //       if (data && data.length > 0) {
-  //         setHeadlines(data);
-  //        } // Store all headlines if valid data is returned
-  //       //  else {
-  //       //   triggerSaveNewHeadlines(); // Trigger save if headlines are empty or null
-  //       // }
-  //     } else {
-  //       console.error('Failed to fetch headlines');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching headlines:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, []);
-
-  // Fetch headlines once when the component mounts (empty dependency array)
-  // useEffect(() => {
-  //   fetchHeadlines();
-  // }, []);
-
-  // Process the headlines only when `headlines` changes
   useEffect(() => {
-  const processHeadlines = () => {
     if (headlines.length > 0) {
-      const today = new Date().setHours(0, 0, 0, 0); // Get today's date at midnight
-
-      // Check if any headlines are earlier than today
-      const hasOldHeadlines = headlines.some((headline) => {
-        const headlineDate = new Date(headline.date_processed).setHours(0, 0, 0, 0);
-        return headlineDate < today;
-      });
-
-      if (hasOldHeadlines || headlines.length === 0) {
-        // triggerSaveNewHeadlines(); // Trigger save if headlines are outdated or empty
-      }
-
       // Filter headlines by selected date range
       const filteredByDate = headlines.filter((headline) => {
         const headlineDate = new Date(headline.date_processed);
@@ -115,20 +39,34 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
         );
       });
 
-      // Filter by type (today vs overall)
+      // Filter by type (today, overall, evergreen)
       const todayHeadlines = filteredByDate.filter((headline) => headline.type === 'today');
       const overallHeadlines = filteredByDate.filter((headline) => headline.type === 'overall');
       const evergreenHeadlines = filteredByDate.filter((headline) => headline.type === 'evergreen');
 
+      // **Group Evergreen Headlines by Topic**
+      const groupedEvergreenHeadlines: { [key: string]: Headline[] } = {};
+      evergreenHeadlines.forEach((headline) => {
+        const topic = headline.topic || 'Uncategorized';
+        if (!groupedEvergreenHeadlines[topic]) {
+          groupedEvergreenHeadlines[topic] = [];
+        }
+        groupedEvergreenHeadlines[topic].push(headline);
+      });
+
       setFilteredToday(todayHeadlines);
       setFilteredOverall(overallHeadlines);
-      setFilteredEvergreen(evergreenHeadlines);
-    }
-  };
+      setFilteredEvergreen(groupedEvergreenHeadlines);
 
-    processHeadlines();
-  }, [headlines, ]);
-  //fetchheadlines used to be here^
+      setLoading(false); // Set loading to false after data has been processed
+    }
+  }, [headlines, startDate, endDate]); // Re-run this when headlines, startDate, or endDate change
+
+  useEffect(() => {
+    if (filteredEvergreen) {
+      console.log("Grouped Evergreen Topics:", filteredEvergreen);
+    }
+  }, [filteredEvergreen]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'start' | 'end') => {
     if (type === 'start') {
@@ -138,14 +76,13 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
     }
   };
 
-  const startNewDraft = () => {
-    const id = generateUUID();
-    router.push(`/record/${id}`);
-  };
-
   // Function to toggle the expanded state
   const toggleExpand = (id: string) => {
     setExpandedHeadline(expandedHeadline === id ? null : id); // Toggle the expanded headline
+  };
+
+  const toggleExpandTopic = (topic: string) => {
+    setExpandedTopic(expandedTopic === topic ? null : topic);
   };
 
   return (
@@ -163,7 +100,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   
           <CardContent>
             {(() => {
-              const highMatchHeadlines = filteredOverall.filter(headline => headline.match_percent >= 10);
+              const highMatchHeadlines = filteredOverall.filter(headline => parseFloat(headline.match_percent) >= 10);
               const hasHighMatch = highMatchHeadlines.length > 0;
               const alertColor = hasHighMatch ? "bg-red-500" : "bg-green-500";
               const alertMessage = hasHighMatch ? "Possible Write-In Campaign detected" : "No Special Alerts";
@@ -231,8 +168,8 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                       <div key={headline.id} className="border-t border-muted mt-4">
                         <button className="w-full text-left py-2 px-4" onClick={() => toggleExpand(headline.id)}>
                           <h4 className="text-base font-semibold">{headline.title}</h4>
-                                                  {/* Fading description */}
-                                                  <p
+                          {/* Fading description */}
+                          <p
                             className={`text-sm text-muted-foreground transition-all ${
                               expandedHeadline === headline.id ? 'max-h-none mask-none' : 'max-h-12 fade-mask'
                             }`}
@@ -352,38 +289,62 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
 
                 {/* Evergreen Topics List */}
                 <div className="max-h-[400px] overflow-y-auto">
-                  {filteredEvergreen.length > 0 ? (
-                    filteredEvergreen.map((headline) => (
-                      <div key={headline.id} className="border-t border-muted mt-4">
-                        <button className="w-full text-left py-2 px-4" onClick={() => toggleExpand(headline.id)}>
-                          <h4 className="text-base font-semibold">{headline.title}</h4>
+                  {Object.entries(filteredEvergreen).length > 0 ? (
+                    Object.entries(filteredEvergreen).map(([topic, topicHeadlines]) => (
+                      <div key={topic} className="border-t border-muted mt-4">
+                        {/* Evergreen Topic */}
+                        <button
+                          className="w-full text-left py-3 px-4 text-lg font-bold bg-gray-100 hover:bg-gray-200 rounded-md transition"
+                          onClick={() => toggleExpandTopic(topic)}
+                        >
+                          {topic}
                         </button>
-                        {expandedHeadline === headline.id && (
-                          <div className="px-4 py-2 text-sm text-muted-foreground">
-                            {headline.match_percent && (
-                              <p className="font-medium text-gray-600">
-                                <strong>Match Percentage:</strong> {headline.match_percent}%
-                              </p>
-                            )}
-                            <p className="mb-2">
-                              <strong>Description:</strong> {headline.desc}
-                            </p>
-                            {headline.examples && (
-                              <div className="mt-2">
-                                <strong>Examples:</strong>
-                                <ul className="list-disc list-inside mt-1">
-                                  {headline.examples.split("|").map((example, index) => (
-                                    <li key={index} className="text-gray-500">{example.trim()}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+
+                        {expandedTopic === topic && (
+                          <div className="px-4">
+                            {Array.isArray(topicHeadlines) &&
+                              topicHeadlines.map((headline) => (
+                                <div key={headline.id} className="border-l-4 border-blue-500 pl-4 mt-2">
+                                  {/* Headline */}
+                                  <h2><strong>
+                                    {headline.title}
+                                  </strong></h2>
+
+                                    <div className="px-4 py-2 text-sm bg-gray-50 border rounded-md">
+                                      <p><strong>Description:</strong> {headline.desc}</p>
+
+                                      {/* Sentiment Score */}
+                                      {headline.score && (
+                                        <p className="mt-2">
+                                          <strong>Sentiment Score:</strong>{" "}
+                                          <span className={`font-medium ${headline.score === "positive" ? "text-green-600" : headline.score === "negative" ? "text-red-600" : "text-gray-600"}`}>
+                                            {headline.score}
+                                          </span>
+                                        </p>
+                                      )}
+
+                                      {/* Example Feedback */}
+                                      {headline.examples && (
+                                        <div className="mt-2">
+                                          <strong>Examples:</strong>
+                                          <ul className="list-disc list-inside mt-1">
+                                            {headline.examples.split("|").map((example: string, index: number) => (
+                                              <li key={index} className="text-gray-500">{example.trim()}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                </div>
+                              ))}
                           </div>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div className="p-6 mt-4 bg-gray-100 text-gray-500 text-center rounded-md shadow-sm">No Evergreen Topics Available</div>
+                    <div className="p-6 mt-4 bg-gray-100 text-gray-500 text-center rounded-md shadow-sm">
+                      No Evergreen Topics Available
+                    </div>
                   )}
                 </div>
               </Tabs.Content>

@@ -95,7 +95,9 @@ export const headline = pgTable(
     examples: text('examples').notNull(),
     category: text('category').notNull(),
     date_processed: timestamp('date_processed').notNull(),
-    type: text('type').notNull()
+    type: text('type').notNull(),
+    topic: text('topic'),
+    score: text('score'),
   }
 );
 

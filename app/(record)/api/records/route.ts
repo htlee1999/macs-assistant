@@ -104,26 +104,17 @@ export async function POST(req: NextRequest) {
 async function createSummaryAndTopics(message: string): Promise<{ summary: string, evergreen_topics: string[] }> {
   
   const evergreenTopics = [
-    "Amenities and Facilities",
-    "Sustainability and Resiliency",
-    "Public Space",
-    "Rejuvenation",
-    "Economy",
-    "Recreation",
-    "Loss of Greenery and Open Space",
-    "General DMP19 Enquiries",
-    "Parks, Greenery, Biodiversity",
-    "Housing",
-    "Transport and Mobility",
-    "Employment Centers and Offices",
-    "Identity/Heritage/Conservation",
-    "Health and Medical Care",
-    "Sports Facilities",
-    "Intensity and Development",
-    "Building Height Controls",
-    "Information on URA Online",
-    "Future Developments",
-    "Referred to Other Agencies"
+    "Food Information",
+    "Delivery Orders",
+    "Promotions",
+    "Restaurant Information",
+    "The McDonald's App",
+    "Gift Certificates",
+    "Large Orders",
+    "McDelivery Service",
+    "Drive-Thru",
+    "Happy Meal",
+    "Celebrating Birthdays"
   ];
 
   const prompt = `

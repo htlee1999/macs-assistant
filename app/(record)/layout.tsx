@@ -7,6 +7,7 @@ import { AppDocumentsBar } from '@/components/sidebars/app-documents-bar';
 
 import { auth } from '../(auth)/auth';
 import { RecordIdProvider } from '@/components/recordIdContext';
+import { ProcessorProvider } from '@/components/daily-processor'
 
 export const experimental_ppr = true;
 
@@ -19,18 +20,20 @@ export default async function Layout({
   const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
 
   return (
-    <RecordIdProvider>
-    <SidebarProvider defaultOpen={!isCollapsed}>
-      <DocumentsBarProvider defaultOpen={false}>
-        <div className="flex flex-row h-screen w-full">
-          <AppSidebar user={session?.user} />
-          <DocumentsBarInset>
-            <SidebarInset>{children}</SidebarInset>
-          </DocumentsBarInset>
-          <AppDocumentsBar/>
-        </div>
-      </DocumentsBarProvider>
-    </SidebarProvider>
-    </RecordIdProvider>
+    <ProcessorProvider>
+      <RecordIdProvider>
+        <SidebarProvider defaultOpen={!isCollapsed}>
+          <DocumentsBarProvider defaultOpen={false}>
+            <div className="flex flex-row h-screen w-full">
+              <AppSidebar user={session?.user} />
+              <DocumentsBarInset>
+                <SidebarInset>{children}</SidebarInset>
+              </DocumentsBarInset>
+              <AppDocumentsBar/>
+            </div>
+          </DocumentsBarProvider>
+        </SidebarProvider>
+      </RecordIdProvider>
+    </ProcessorProvider>
   );
 }

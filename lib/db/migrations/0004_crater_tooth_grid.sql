@@ -1,69 +1,56 @@
-DROP TABLE IF EXISTS "Record"; 
-DROP TABLE IF EXISTS "Headlines"; 
-DROP TABLE IF EXISTS "faq_chunks"; 
+-- DROP TABLE IF EXISTS "Record";
+-- DROP TABLE IF EXISTS "Headlines";
+-- DROP TABLE IF EXISTS "Prompts";
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS "User" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  "email" varchar(64) NOT NULL,
-  "password" varchar(64)
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email" varchar(64) NOT NULL,
+	"password" varchar(64)
 );
 
-CREATE TABLE IF NOT EXISTS "faq_chunks" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  "faq_id" varchar(50) NOT NULL,
-  "category" varchar(100) NOT NULL, 
-  "section" varchar(100) NOT NULL,
-  "heading" text NOT NULL,
-  "content" text NOT NULL,
-  "embedding" vector(1536) -- Add vector embedding column
-);
-
--- Create vector search index if it doesn't exist
-CREATE INDEX IF NOT EXISTS faq_chunks_embedding_idx ON "faq_chunks" USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-
--- Create the "record" table (lowercase to match your code)
+-- Create the "Record" table
 CREATE TABLE IF NOT EXISTS "Record" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  "message" text NOT NULL, -- Renamed from case_description
-  "sectionCode" text NOT NULL, -- Renamed from section_code
-  "actionOfficer1" uuid NOT NULL, -- Changed to camelCase
-  "actionOfficer2" uuid,
-  "creationOfficer" uuid,
-  "caseType" text NOT NULL, -- Renamed from case_type_descr
-  "channel" text NOT NULL, -- Renamed from channel_descr
-  "category" text NOT NULL, -- Renamed from business_descr
-  "subcategory" text, -- Renamed from detailed_business_descr
-  "outcome" text NOT NULL DEFAULT 'Open', -- Renamed from decision_descr
-  "replyDate" timestamp, -- Renamed from final_reply_date_time
-  "reply" text, -- Renamed from reply_content
-  "planningArea" text, -- Renamed from planning_area_descr
+  "case_description" text NOT NULL,
+  "section_code" text NOT NULL,
+  "action_officer1" uuid NOT NULL,
+  "action_officer2" uuid,
+  "creation_officer" uuid,
+  "case_type_descr" text NOT NULL,
+  "channel_descr" text NOT NULL,
+  "business_descr" text NOT NULL,
+  "detailed_business_descr" text,
+  "decision_descr" text,
+  "final_reply_date_time" timestamp,
+  "reply_content" text,
+  "planning_area_descr" text,
   "location" text,
-  "locationX" text,
-  "locationY" text,
+  "location_x" text,
+  "location_y" text,
   "draft" jsonb,
   "summary" text,
   "reasoning" text,
-  "creationDate" timestamp NOT NULL, -- Renamed from creation_date_time
-  "receiveDate" timestamp NOT NULL, -- Renamed from receive_date_time
-  "relevantChunks" jsonb,
-  "relatedEmails" text[],
-  "evergreen_topics" text[]
+  "creation_date_time" timestamp NOT NULL,
+  "receive_date_time" timestamp NOT NULL
 );
 
--- Add foreign key constraint for userId
+-- Add foreign key constraint for userId (assuming "User" table exists)
 DO $$ BEGIN
-  ALTER TABLE "record"
-   ADD CONSTRAINT "record_actionOfficer1_User_id_fk"
-   FOREIGN KEY ("actionOfficer1") REFERENCES "public"."User"("id")
-   ON DELETE NO ACTION ON UPDATE NO ACTION;
+  ALTER TABLE "Record" 
+  ADD CONSTRAINT "Record_actionofficer1_User_id_fk" 
+  FOREIGN KEY ("action_officer1") REFERENCES "public"."User"("id") 
+  ON DELETE NO ACTION ON UPDATE NO ACTION;
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
 
--- Create the "headline" table (lowercase to match your code)
-CREATE TABLE IF NOT EXISTS "Headline" (
+ALTER TABLE "Record" ADD COLUMN "relevantChunks" jsonb;
+ALTER TABLE "Record" ADD COLUMN "relatedEmails" text; 
+ALTER TABLE "Record" ADD COLUMN "evergreen_topics" text;
+
+CREATE TABLE IF NOT EXISTS "Headlines" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "title" text NOT NULL,
   "match_percent" text NOT NULL,
@@ -72,7 +59,9 @@ CREATE TABLE IF NOT EXISTS "Headline" (
   "examples" text NOT NULL,
   "category" text NOT NULL,
   "date_processed" timestamp NOT NULL,
-  "type" text NOT NULL
+  "type" text NOT NULL, 
+  "topic" text,
+  "score" text
 );
 
 -- Create the "preferences" table (lowercase to match your code)
