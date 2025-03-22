@@ -10,23 +10,7 @@ import CSVChunksProcessor from './csv-chunks';
 
 // Remove the imported createNewRecord function from queries.ts
 
-const [outlets, setOutlets] = useState<any[]>([]); // State to hold the outlets data
 
-useEffect(() => {
-  const fetchOutlets = async () => {
-    try {
-      const response = await fetch('@/public/outlets.json'); // Update with your JSON path
-      if (!response.ok) {
-        throw new Error('Failed to load outlets data');
-      }
-      const data = await response.json();
-      setOutlets(data);
-    } catch (error) {
-      console.error('Error loading outlets:', error);
-    }
-  };
-  fetchOutlets();
-}, []);
 
 function PureDraftHeader({
   selectedModelId,
@@ -43,13 +27,30 @@ function PureDraftHeader({
   const [newRecord, setNewRecord] = useState({
     message: '',
     category: '',
-    subcategory: ''
+    location: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [outlets, setOutlets] = useState<any[]>([]); // State to hold the outlets data
+
+useEffect(() => {
+  const fetchOutlets = async () => {
+    try {
+      const response = await fetch('/outlets.json'); // Update with your JSON path
+      if (!response.ok) {
+        throw new Error('Failed to load outlets data');
+      }
+      const data = await response.json();
+      setOutlets(data);
+    } catch (error) {
+      console.error('Error loading outlets:', error);
+    }
+  };
+  fetchOutlets();
+}, []);
 
   const closeNewRecordModal = () => {
     setIsNewRecordModalOpen(false);
-    setNewRecord({ message: '', category: '', subcategory: '' });
+    setNewRecord({ message: '', category: '', location: '' });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -79,7 +80,7 @@ function PureDraftHeader({
         body: JSON.stringify({
           message: newRecord.message,
           category: newRecord.category || undefined,
-          subcategory: newRecord.subcategory || undefined
+          location: newRecord.location || undefined
         }),
       });
 
@@ -199,21 +200,21 @@ function PureDraftHeader({
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700">
-                  Subcategory
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                  location
                 </label>
                 <Select
-                  id="subcategory"
-                  name="subcategory"
+                  id="location"
+                  name="location"
                   value={
-                    newRecord.subcategory
-                      ? { value: newRecord.subcategory, label: newRecord.subcategory }
+                    newRecord.location
+                      ? { value: newRecord.location, label: newRecord.location }
                       : null
                   }
                   onChange={(selectedOption) => {
                     setNewRecord((prev) => ({
                       ...prev,
-                      subcategory: selectedOption ? selectedOption.label : '',
+                      location: selectedOption ? selectedOption.label : '',
                     }));
                   }}
                   options={outlets}
