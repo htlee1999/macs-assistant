@@ -57,7 +57,6 @@ We based our solution off the fantastic work done by Greg over at [Rabbit Hole S
 - [[Docs] pgvector: Embeddings and vector similarity](https://supabase.com/docs/guides/database/extensions/pgvector)
 - Watch [Greg's](https://twitter.com/ggrdson) "How I built this" [video](https://youtu.be/Yhtjd7yGGGA) on the [Rabbit Hole Syndrome YouTube Channel](https://www.youtube.com/@RabbitHoleSyndrome).
 - The editing function of the app comes from Novel (https://github.com/steven-tey/novel/blob/main/README.md)
-- We also used OneMap's API to generate a map (https://www.onemap.gov.sg/apidocs/maps)
 
 The frontend library used in this Beta is created by [Vercel](https://vercel.com) and [Next.js](https://nextjs.org) team members, with contributions from:
 
