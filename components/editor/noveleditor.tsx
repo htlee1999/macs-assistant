@@ -228,7 +228,7 @@ const NovelEditor: FC<EditorProps> = ({
               </Button>
             )}
           </div>
-          <CardContent className="p-4 h-full overflow-y-auto pt-10">
+          <CardContent className="p-4 h-full overflow-y-auto pt-10 relative">
             <EditorRoot>
               <EditorContent
                 ref={editorRef}
@@ -262,7 +262,7 @@ const NovelEditor: FC<EditorProps> = ({
                 }}
                 slotAfter={<ImageResizer />}
               >
-                <EditorCommand className="z-[100] h-auto max-h-[230px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
+                <EditorCommand className="z-[100] h-auto max-h-[50vh] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
                   <EditorCommandList>
                     {suggestionItems.map(item => (
                       <EditorCommandItem
