@@ -1,8 +1,8 @@
 # macs-assistant
-The motivation behind this macdonald's FAQ drafter is that sometimes people can send lots of questions and lots of emails, we want to create a drafter that would help you generate appropriate response with relevant data. 
+The motivation behind this macdonald's FAQ drafter is that sometimes people can send lots of questions and lots of emails, we want to create a drafter that would help you generate appropriate response with relevant data. You can also edit using a Notion-like editor called Novel.
 
 - For the purpose of deployment only a default base model utilising Gemini flash 2.0 would be utilised when creating a draft.
-- The chunks that are used as relevant context has already been embedded an ingested 
+- The chunks that are used as relevant context has already been embedded and ingested 
 - For full AI capabilities of the web app you would require your own API keys and you would need to use it either locally or deploy on your own. 
 - As such you would not be able to upload CSV file for 2 reasons
   1. The CSV file need to be in a specific format
@@ -56,6 +56,7 @@ We based our solution off the fantastic work done by Greg over at [Rabbit Hole S
 - Read the blogpost on how he built [ChatGPT for the Supabase Docs](https://supabase.com/blog/chatgpt-supabase-docs).
 - [[Docs] pgvector: Embeddings and vector similarity](https://supabase.com/docs/guides/database/extensions/pgvector)
 - Watch [Greg's](https://twitter.com/ggrdson) "How I built this" [video](https://youtu.be/Yhtjd7yGGGA) on the [Rabbit Hole Syndrome YouTube Channel](https://www.youtube.com/@RabbitHoleSyndrome).
+- The editing function of the app comes from Novel (https://github.com/steven-tey/novel/blob/main/README.md)
 
 The frontend library used in this Beta is created by [Vercel](https://vercel.com) and [Next.js](https://nextjs.org) team members, with contributions from:
 
