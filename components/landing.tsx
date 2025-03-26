@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useRouter } from 'next/navigation';
 import { generateUUID } from '@/lib/utils';
 import { DraftHeader } from '@/components/editor/draft-header';
 import { Headline } from '@/lib/db/schema'
