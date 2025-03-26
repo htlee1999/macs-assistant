@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS "Record"; 
 DROP TABLE IF EXISTS "Headlines"; 
--- DROP TABLE IF EXISTS "faq_chunks"; 
+DROP TABLE IF EXISTS "faq_chunks"; 
 
 CREATE EXTENSION IF NOT EXISTS vector;
 

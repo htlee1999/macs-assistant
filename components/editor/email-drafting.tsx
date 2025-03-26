@@ -230,20 +230,12 @@ export function EmailDraftingPage({
     setIsEditorLoading(true);
     
     try {
-      if (!selectedPrompt) {
-        toast.error('Please select a prompt before generating a draft.');
-        setIsEditorLoading(false);
-        isTogglingRef.current = false;
-        return;
-      }
-
       const response = await fetch(`/api/editor?recordId=${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recordId: id,
           generateDraft: true,
-          prompt: selectedPrompt.content, // 🔹 Use selected prompt instead of hardcoded values
         })
       });
 
