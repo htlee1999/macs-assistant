@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS "Record"; 
-DROP TABLE IF EXISTS "Headlines"; 
-DROP TABLE IF EXISTS "faq_chunks"; 
+-- DROP TABLE IF EXISTS "Record"; 
+-- DROP TABLE IF EXISTS "Headlines"; 
+-- DROP TABLE IF EXISTS "faq_chunks"; 
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
@@ -38,6 +38,19 @@ CREATE TABLE IF NOT EXISTS "Record" (
   "relatedEmails" text,
   "evergreenTopics" text
 );
+
+CREATE TABLE IF NOT EXISTS "faq_chunks" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "faq_id" text NOT NULL,
+  "category" text NOT NULL,
+  "section" text NOT NULL,
+  "heading" text NOT NULL,
+  "content" text NOT NULL,
+  "embedding" vector(1536) NOT NULL
+);
+
+-- Create an index to speed up vector similarity searches
+CREATE INDEX IF NOT EXISTS idx_faq_chunks_embedding ON "faq_chunks" USING ivfflat (embedding vector_cosine_ops);
 
 -- Add foreign key constraint for userId (assuming "User" table exists)
 DO $$ BEGIN
