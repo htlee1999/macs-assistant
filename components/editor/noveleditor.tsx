@@ -34,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import { useSWRConfig } from "swr";
 import { cn } from "@/lib/utils";
 
-
 // Keep your existing helper functions
 const createUniqueExtensions = () => {
   const extensionsMap = new Map();
@@ -58,8 +57,6 @@ interface EditorProps {
   recordId?: string;
 }
 
-
-
 // Custom event to hide editor in parent component
 const dispatchEditorHideEvent = (recordId: string) => {
   // Create and dispatch a custom event that the parent can listen for
@@ -79,11 +76,37 @@ const NovelEditor: FC<EditorProps> = ({
   const [openMath, setOpenMath] = useState(false);
   const [openAI, setOpenAI] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [screenSize, setScreenSize] = useState("base");  // Track screen size for responsive adjustments
   const editorRef = useRef<any>(null);
   const { mutate } = useSWRConfig();
 
   const extensions = useMemo(() => createUniqueExtensions(), []);
 
+  // Detect screen size on mount and window resize
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 2000) {
+        setScreenSize("2xl");
+      } else if (window.innerWidth >= 1800) {
+        setScreenSize("xl");
+      } else if (window.innerWidth >= 1500) {
+        setScreenSize("lg");
+      } else if (window.innerWidth >= 1200) {
+        setScreenSize("md");
+      } else {
+        setScreenSize("base");
+      }
+    }
+    
+    // Set initial size
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const debouncedUpdates = useDebouncedCallback(async (editor: EditorInstance) => {
     if (!recordId) return;
@@ -136,7 +159,6 @@ const NovelEditor: FC<EditorProps> = ({
     }
   };
 
-
   const handleCopy = () => {
     if (editorRef.current) {
       const editor = editorRef.current;
@@ -153,15 +175,36 @@ const NovelEditor: FC<EditorProps> = ({
     }
   };
 
+  // Get the appropriate font size class based on screen size
+  const getFontSizeClass = () => {
+    switch (screenSize) {
+      case '2xl': return 'text-3xl';
+      case 'xl': return 'text-2xl';
+      case 'lg': return 'text-xl';
+      case 'md': return 'text-lg';
+      default: return 'text-base';
+    }
+  };
+
+  // Get the appropriate icon size based on screen size
+  const getIconSize = () => {
+    switch (screenSize) {
+      case '2xl': return 28;
+      case 'xl': return 24;
+      case 'lg': return 20;
+      case 'md': return 18;
+      default: return 16;
+    }
+  };
 
   return (
-    <div className="flex flex-col min-w-0 flex-1 pt-4 overflow-y-auto">
+    <div className="flex flex-col h-full">
       <motion.div
-        className="w-full mx-auto max-w-3xl px-4 group/message"
+        className="w-full group/message h-full"
         initial={{ y: 5, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <Card className={`w-full bg-card max-h-[430px] relative`}>
+        <Card className="w-full bg-card h-full relative overflow-hidden">
           <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
             <Button
               variant="ghost"
@@ -170,7 +213,7 @@ const NovelEditor: FC<EditorProps> = ({
               className="text-foreground hover:bg-muted/10"
               title="Copy to clipboard"
             >
-              <Copy className="size-5" />
+              <Copy className={`size-${getIconSize() > 20 ? 7 : 5}`} />
             </Button>
             {recordId && (
               <Button
@@ -181,17 +224,18 @@ const NovelEditor: FC<EditorProps> = ({
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 title="Delete draft"
               >
-                <Trash2 className="size-5" />
+                <Trash2 className={`size-${getIconSize() > 20 ? 7 : 5}`} />
               </Button>
             )}
           </div>
-          <CardContent className="p-4 overflow-y-auto max-h-[380px] pt-10">
+          <CardContent className="p-4 h-full overflow-y-auto pt-10">
             <EditorRoot>
               <EditorContent
                 ref={editorRef}
                 className={cn(
-                  "bg-background rounded-xl p-4 w-full max-w-3xl mx-auto prose text-foreground",
-                  "mb-8"
+                  "bg-background rounded-xl p-4 w-full mx-auto prose text-foreground overflow-y-auto",
+                  "mb-8 h-[calc(100%-20px)]",
+                  getFontSizeClass() // Apply responsive font size
                 )}
                 initialContent={initialValue}
                 extensions={extensions}
@@ -205,7 +249,10 @@ const NovelEditor: FC<EditorProps> = ({
                   handleDrop: (view, event, _slice, moved) =>
                     handleImageDrop(view, event, moved, uploadFn),
                   attributes: {
-                    class: 'prose font-title font-default focus:outline-none text-foreground max-w-none',
+                    class: cn(
+                      'prose font-title font-default focus:outline-none text-foreground max-w-none h-full',
+                      getFontSizeClass() // Apply responsive font size
+                    ),
                   },
                 }}
                 onUpdate={({ editor }) => {
@@ -215,7 +262,7 @@ const NovelEditor: FC<EditorProps> = ({
                 }}
                 slotAfter={<ImageResizer />}
               >
-                <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
+                <EditorCommand className="z-[100] h-auto max-h-[230px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
                   <EditorCommandList>
                     {suggestionItems.map(item => (
                       <EditorCommandItem
@@ -228,8 +275,13 @@ const NovelEditor: FC<EditorProps> = ({
                           {item.icon}
                         </div>
                         <div>
-                          <p className="font-medium">{item.title}</p>
-                          <p className="text-xs text-foreground">
+                          <p className={cn("font-medium", getFontSizeClass())}>{item.title}</p>
+                          <p className={cn("text-foreground", 
+                             screenSize === "base" ? "text-xs" : 
+                             screenSize === "md" ? "text-sm" : 
+                             screenSize === "lg" ? "text-base" : 
+                             screenSize === "xl" ? "text-lg" : "text-xl"
+                          )}>
                             {item.description}
                           </p>
                         </div>
@@ -256,7 +308,7 @@ const NovelEditor: FC<EditorProps> = ({
         </Card>
       </motion.div>
     </div>
-    );
-  };
+  );
+};
 
 export { NovelEditor };

@@ -48,6 +48,8 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
     if (zoom <= 14) return 8;      // Neighborhood level
     return 9;                      // Street level
   };
+
+  const consistentOpacity = 0.25; // Change this value to your desired translucency
   
   // Function to toggle hexagon visibility based on zoom
   const updateHexagonVisibility = (zoom: number) => {
@@ -63,10 +65,11 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
           polygon.closeTooltip();
         }
       } else {
-        // Show hexagons at normal zoom levels with adjusted opacity (30% more translucent)
-        const adjustedOpacity = (options.opacity || 0.7) * 0.7;
+        // MODIFY THIS LINE: Set a consistent translucency regardless of zoom level
+        // Use a fixed lower opacity value like 0.25 (or whatever translucency you prefer)
+        const consistentOpacity = 0.25; // Change this value to your desired translucency
         polygon.setStyle({ 
-          fillOpacity: adjustedOpacity, 
+          fillOpacity: consistentOpacity, 
           opacity: 1 
         });
         
@@ -137,7 +140,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
               fillColor: options.fillColor,
               color: options.strokeColor,
               weight: options.strokeWidth,
-              fillOpacity: (options.opacity || 0.7) * 0.5, // 50% more translucent
+              fillOpacity: consistentOpacity, // Use consistent opacity
               interactive: true,
             });
             
@@ -259,14 +262,11 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             const fillColor = `rgb(${r}, ${g}, ${b})`;
             
             // Create and style the polygon with high z-index
-            // Make hexagons 50% more translucent by multiplying opacity by 0.5
-            const adjustedOpacity = (options.opacity || 0.7) * 0.5;
-            
             const polygon = L.polygon(hexBoundary, {
               fillColor: fillColor, // Dynamic color based on count
               color: options.strokeColor,
               weight: options.strokeWidth,
-              fillOpacity: currentZoom >= 16 ? 0 : adjustedOpacity, // Hide at high zoom levels with increased translucency
+              fillOpacity: currentZoom >= 16 ? 0 : consistentOpacity, // Hide at high zoom levels
               opacity: currentZoom >= 16 ? 0 : 1, // Hide at high zoom levels
               interactive: true,
               bubblingMouseEvents: true,
@@ -276,8 +276,8 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             if (options.enableHover) {
               polygon.on('mouseover', (e) => {
                 if (currentZoom < 16) { // Only show effects if not at high zoom
-                  // Use adjusted opacity (50% of original) but increase on hover
-                  const hoverOpacity = Math.min(1, (options.opacity || 0.7) * 0.5 * 1.5);
+                  // Increase opacity on hover but don't exceed 1
+                  const hoverOpacity = Math.min(1, consistentOpacity * 1.5);
                   e.target.setStyle({ 
                     fillOpacity: hoverOpacity, 
                     weight: (options.strokeWidth || 2) * 1.5
@@ -291,10 +291,9 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
               
               polygon.on('mouseout', (e) => {
                 if (currentZoom < 16) { // Only reset if not at high zoom
-                  // Use adjusted opacity (50% of original) when not hovering
-                  const adjustedOpacity = (options.opacity || 0.7) * 0.5;
+                  // Use consistent opacity when not hovering
                   e.target.setStyle({ 
-                    fillOpacity: adjustedOpacity, 
+                    fillOpacity: consistentOpacity, 
                     weight: options.strokeWidth
                   });
                   // Always hide tooltip when not hovering

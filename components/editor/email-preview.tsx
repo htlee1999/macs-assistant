@@ -1,13 +1,17 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCitationsBar } from '@/components/ui/documents-bar';
 import { useRecordId } from '@/components/recordIdContext';
-import { MessageSquare, Info, FileText, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageSquare, Info, FileText } from 'lucide-react';
 import type { Record } from '@/lib/db/schema';
 import { StatusSelector, type RecordStatus } from '../editor/status-selector';
+import { cn } from "@/lib/utils";
+
+// Screen size type
+type ScreenSize = 'base' | 'md' | 'lg' | 'xl' | '2xl';
 
 interface EmailPreviewProps {
   recordId: string;
@@ -20,6 +24,7 @@ interface EmailPreviewProps {
   record: Record;
   isEditorVisible: boolean;
   onToggleEditor: () => void;
+  onContentExpand?: (expanded: boolean) => void;
 }
 
 const EmailPreview = ({
@@ -28,13 +33,88 @@ const EmailPreview = ({
   record,
   isEditorVisible,
   onToggleEditor,
+  onContentExpand,
 }: EmailPreviewProps) => {
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isContentExpanded, setIsContentExpanded] = useState(false);
+  const [contentOverflows, setContentOverflows] = useState(false);
+  const [screenSize, setScreenSize] = useState<ScreenSize>('base');
+  const contentRef = useRef<HTMLDivElement>(null);
   const { setOpen, setOpenMobile, isMobile, open, openMobile } = useCitationsBar();
   const { setRecordId } = useRecordId();
 
   // Get the reply directly from the record prop
   const hasReply = !!record.reply;
+
+  // Set up responsive screen size detection with custom breakpoints
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 2000) {
+        setScreenSize("2xl");
+      } else if (window.innerWidth >= 1800) {
+        setScreenSize("xl");
+      } else if (window.innerWidth >= 1500) {
+        setScreenSize("lg");
+      } else if (window.innerWidth >= 1200) {
+        setScreenSize("md");
+      } else {
+        setScreenSize("base");
+      }
+    }
+    
+    // Set initial screen size
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Get text size class based on current screen size
+  const getTextSize = () => {
+    switch(screenSize) {
+      case '2xl': return 'text-3xl';
+      case 'xl': return 'text-2xl';
+      case 'lg': return 'text-xl';
+      case 'md': return 'text-lg';
+      default: return 'text-base';
+    }
+  };
+
+  // Get heading size class based on current screen size
+  const getHeadingSize = () => {
+    switch(screenSize) {
+      case '2xl': return 'text-4xl';
+      case 'xl': return 'text-3xl';
+      case 'lg': return 'text-2xl';
+      case 'md': return 'text-xl';
+      default: return 'text-lg';
+    }
+  };
+
+  // Get button text size
+  const getButtonTextSize = () => {
+    switch(screenSize) {
+      case '2xl': 
+      case 'xl': return 'text-xl';
+      case 'lg': return 'text-lg';
+      case 'md': return 'text-base';
+      default: return 'text-sm';
+    }
+  };
+
+  // Get icon size
+  const getIconSize = () => {
+    switch(screenSize) {
+      case '2xl': 
+      case 'xl': return 'w-6 h-6';
+      case 'lg': 
+      case 'md': return 'w-5 h-5';
+      default: return 'w-4 h-4';
+    }
+  };
 
   const handleOpenSidebar = () => {
     if (isMobile) {
@@ -50,13 +130,66 @@ const EmailPreview = ({
   };
 
   const handleCreateDraft = () => {
-    setIsMinimized(true);
     onToggleEditor();
   };
 
+  // Toggle content expansion
+  const toggleContentExpand = () => {
+    if (contentOverflows) {
+      const newExpandedState = !isContentExpanded;
+      setIsContentExpanded(newExpandedState);
+      
+      // Notify parent component about the expansion state change
+      if (onContentExpand) {
+        onContentExpand(newExpandedState);
+      }
+    }
+  };
+
+  // Check if content overflows - adjusted for custom responsive breakpoints
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (contentRef.current) {
+        const element = contentRef.current;
+        
+        // Base height for text masking (3rem)
+        const baseHeight = 48;
+        
+        // Scale factor based on screen size
+        let scaleFactor;
+        if (window.innerWidth >= 2000) {
+          scaleFactor = 2;
+        } else if (window.innerWidth >= 1800) {
+          scaleFactor = 1.5;
+        } else if (window.innerWidth >= 1500) {
+          scaleFactor = 1.25;
+        } else {
+          scaleFactor = 1;
+        }
+        
+        const hasOverflow = element.scrollHeight > (baseHeight * scaleFactor);
+        setContentOverflows(hasOverflow);
+      }
+    };
+
+    checkOverflow();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [details.content, screenSize]);
+
+  useEffect(() => {
+    // When a reply is added, make sure content is visible but not expanded
+    if (hasReply) {
+      setIsMinimized(false);
+      setIsContentExpanded(false);
+    }
+  }, [hasReply]);
+
   if (!details) return null;
 
-  // UI status button (shows actual status from record)
+  // UI status button
   const StatusButton = () => {
     return (
       <StatusSelector
@@ -66,29 +199,48 @@ const EmailPreview = ({
     );
   };
 
+  // Calculate content container style
+  const contentContainerStyle = hasReply ? {
+    height: isContentExpanded ? '100%' : '50%',
+    transition: 'height 0.3s ease'
+  } : {};
+
+  // Get max height for content truncation based on screen size
+  const getMaxHeight = () => {
+    switch(screenSize) {
+      case '2xl': return 'max-h-24';
+      case 'xl': return 'max-h-20';
+      case 'lg': return 'max-h-16';
+      case 'md': return 'max-h-14';
+      default: return 'max-h-12';
+    }
+  };
+
   return (
-    <div className="flex flex-col min-w-0 flex-1 pt-4">
+    <div className="flex flex-col flex-1 pt-4 h-full">
       <motion.div
-        className="w-full mx-auto max-w-3xl px-4 group/message"
+        className="w-full group/message h-full"
         initial={{ y: 5, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <Card className={`w-full bg-card transition-all duration-5000 ${isMinimized && 'mb-2'}`}>
-          <CardHeader className="pb-2">
+        <Card className={`w-full h-full bg-card transition-all duration-500 flex flex-col ${isMinimized && 'mb-2'}`}>
+          <CardHeader className="pb-2 flex-shrink-0">
             <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <CardTitle>{details.title}</CardTitle>
+              <div className="space-y-1 flex items-center">
+                {/* Responsive title with custom screen size */}
+                <CardTitle className={getHeadingSize()}>
+                  {details.title}
+                </CardTitle>
               </div>
               <div className="flex items-center gap-2">
                 <StatusButton />
-                {/* Only show buttons if email is not replied AND editor is not visible */}
                 {!hasReply && !isEditorVisible && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         onClick={handleCreateDraft}
                         variant="outline"
-                        className="md:px-2 md:h-fit"
+                        className={`md:px-2 md:h-fit ${getButtonTextSize()}`}
                       >
                         Create Draft
                       </Button>
@@ -96,9 +248,8 @@ const EmailPreview = ({
                     <TooltipContent>Create a new draft</TooltipContent>
                   </Tooltip>
                 )}
-
-                {/* Only show Information and Minimize buttons if editor is visible AND email is not replied */}
-                {!hasReply && isEditorVisible && (
+  
+                {!hasReply && (
                   <>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -106,15 +257,14 @@ const EmailPreview = ({
                           variant="outline"
                           className="md:px-2 md:h-fit"
                         >
-                          <Info size={16} />
-
+                          <Info className={getIconSize()} />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
                         {details.summary ? details.summary : 'Loading summary...'}
                       </TooltipContent>
                     </Tooltip>
-
+  
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -122,28 +272,10 @@ const EmailPreview = ({
                           variant="outline"
                           className="md:px-2 md:h-fit"
                         >
-                          <FileText size={16} />
+                          <FileText className={getIconSize()} />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>View Sources & Related Emails</TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={() => {
-                            setIsMinimized(!isMinimized);
-                          }}
-                          variant="outline"
-                          className="md:px-2 md:h-fit"
-                        >
-
-                          {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {isMinimized ? 'Expand email' : 'Minimize email'}
-                      </TooltipContent>
                     </Tooltip>
                   </>
                 )}
@@ -152,27 +284,73 @@ const EmailPreview = ({
           </CardHeader>
           {!isMinimized && (
             <>
-              <CardContent>
-                <div className="whitespace-pre-wrap text-sm">
-                  {details.content}
+              <CardContent className="px-6 py-0 flex-grow overflow-hidden">
+                <div 
+                  className="h-full overflow-y-auto pr-2"
+                  style={contentContainerStyle}
+                >
+                  <div className="whitespace-pre-wrap py-4">
+                    {!hasReply ? (
+                      <div 
+                        className={contentOverflows ? "cursor-pointer" : ""}
+                        onClick={contentOverflows ? toggleContentExpand : undefined}
+                      >
+                        {/* Responsive content text with custom screen size */}
+                        <p 
+                          ref={contentRef}
+                          className={cn(
+                            getTextSize(),
+                            "text-foreground transition-all",
+                            contentOverflows && !isContentExpanded ? `${getMaxHeight()} fade-mask` : 'max-h-none mask-none'
+                          )}
+                        >
+                          {details.content}
+                        </p>
+                        
+                        {contentOverflows && (
+                          <div className={`${screenSize === 'base' ? 'text-xs' : 'text-sm'} text-blue-500 mt-1`}>
+                            {isContentExpanded ? 'Show less' : 'Show more'}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div 
+                        className={contentOverflows ? "cursor-pointer" : ""}
+                        onClick={contentOverflows ? toggleContentExpand : undefined}
+                      >
+                        {/* Responsive content text with custom screen size */}
+                        <p 
+                          ref={contentRef}
+                          className={`${getTextSize()} text-foreground`}
+                        >
+                          {details.content}
+                        </p>
+                        
+                        {contentOverflows && (
+                          <div className={`${screenSize === 'base' ? 'text-xs' : 'text-sm'} text-blue-500 mt-1`}>
+                            {isContentExpanded ? 'Show less' : 'Show more'}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {/* Summary Button Inside Card Content */}
-
               </CardContent>
-
-              {/* Reply section (only shown when a reply exists) */}
+  
               {hasReply && (
-                <CardFooter className="px-6 pt-0 pb-6">
-                  <div className="mt-4 border-t pt-4 w-full">
+                <CardFooter className="px-6 pt-2 pb-6 flex-shrink-0 border-t">
+                  <div className="w-full">
                     <div className="flex items-center mb-2">
-                      <div className="flex items-center text-sm font-medium text-blue-600">
-                        <MessageSquare size={16} className="mr-2" />
-                        Sent reply
+                      <div className={`flex items-center ${screenSize === 'base' ? 'text-sm' : getTextSize()} font-semibold text-blue-600`}>
+                        <MessageSquare className={`mr-2 ${getIconSize()}`} />
+                        Your response
                       </div>
                     </div>
-
-                    <div className="whitespace-pre-wrap text-sm bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md border border-blue-100 dark:border-blue-900 shadow-sm">
-                      {record.reply}
+                    
+                    <div className={`max-h-48 ${screenSize === 'md' ? 'max-h-64' : screenSize === 'lg' ? 'max-h-80' : screenSize === 'xl' || screenSize === '2xl' ? 'max-h-96' : ''} overflow-y-auto`}>
+                      <div className={`whitespace-pre-wrap ${getTextSize()} p-4 rounded-md bg-blue-50 dark:bg-blue-950/30 shadow-sm`}>
+                        {record.reply}
+                      </div>
                     </div>
                   </div>
                 </CardFooter>
@@ -183,6 +361,6 @@ const EmailPreview = ({
       </motion.div>
     </div>
   );
-};
+}
 
 export default memo(EmailPreview);

@@ -1,16 +1,16 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { generateUUID } from '@/lib/utils';
 import { DraftHeader } from '@/components/editor/draft-header';
 import { Headline } from '@/lib/db/schema'
 import { useProcessorContext } from '@/components/daily-processor';
+import { ProcessorButton } from '@/components/processor-button';
 import * as Tabs from '@radix-ui/react-tabs';
 import '@/app/globals.css';
 
 const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
-  const router = useRouter();
   const tempId = generateUUID(); // Generate a temporary ID for the header
 
   // State hooks for headlines
@@ -23,6 +23,8 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   const [isAlertExpanded, setIsAlertExpanded] = useState<boolean>(false);
   const [expandedHeadline, setExpandedHeadline] = useState<string | null>(null);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null); // Track expanded topics
+  
+  // Get headlines from context
   const { headlines } = useProcessorContext();
 
   useEffect(() => {
@@ -44,7 +46,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
       const overallHeadlines = filteredByDate.filter((headline) => headline.type === 'overall');
       const evergreenHeadlines = filteredByDate.filter((headline) => headline.type === 'evergreen');
 
-      // **Group Evergreen Headlines by Topic**
+      // Group Evergreen Headlines by Topic
       const groupedEvergreenHeadlines: { [key: string]: Headline[] } = {};
       evergreenHeadlines.forEach((headline) => {
         const topic = headline.topic || 'Uncategorized';
@@ -58,15 +60,9 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
       setFilteredOverall(overallHeadlines);
       setFilteredEvergreen(groupedEvergreenHeadlines);
 
-      setLoading(false); // Set loading to false after data has been processed
+      setLoading(false);
     }
-  }, [headlines, startDate, endDate]); // Re-run this when headlines, startDate, or endDate change
-
-  useEffect(() => {
-    if (filteredEvergreen) {
-      console.log("Grouped Evergreen Topics:", filteredEvergreen);
-    }
-  }, [filteredEvergreen]);
+  }, [headlines, startDate, endDate]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'start' | 'end') => {
     if (type === 'start') {
@@ -78,7 +74,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
 
   // Function to toggle the expanded state
   const toggleExpand = (id: string) => {
-    setExpandedHeadline(expandedHeadline === id ? null : id); // Toggle the expanded headline
+    setExpandedHeadline(expandedHeadline === id ? null : id);
   };
 
   const toggleExpandTopic = (topic: string) => {
@@ -352,6 +348,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
           </CardContent>
         </Card>
       </div>
+      <ProcessorButton></ProcessorButton>
     </div>
   );
 };
