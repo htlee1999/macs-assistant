@@ -1,5 +1,12 @@
 # macs-assistant
-The motivation behind this macdonald's FAQ drafter is that sometimes people can send lots of questions and lots of emails, we want to create a drafter that would help you generate appropriate response with relevant data. For the purpose of deployment only a default base model utilising Gemini flash 2.0 would be utilised when creating a draft. For full AI capabilities of the web app you would require your own API keys and you would need to use it either locally or deploy on your own. Cheers.
+The motivation behind this macdonald's FAQ drafter is that sometimes people can send lots of questions and lots of emails, we want to create a drafter that would help you generate appropriate response with relevant data. 
+
+- For the purpose of deployment only a default base model utilising Gemini flash 2.0 would be utilised when creating a draft.
+- The chunks that are used as relevant context has already been embedded an ingested 
+- For full AI capabilities of the web app you would require your own API keys and you would need to use it either locally or deploy on your own. 
+- As such you would not be able to upload CSV file for 2 reasons
+  1. The CSV file need to be in a specific format
+  2. You need an API key to do embedding of the chunks
 
 
 ## Features
