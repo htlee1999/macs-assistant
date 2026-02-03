@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/app/(auth)/auth';
 import { EmailDraftingPage } from '@/components/editor/email-drafting';
 import { DEFAULT_MODEL_NAME, models } from '@/lib/ai/models';
@@ -8,10 +8,10 @@ import { getRecordById } from '@/lib/db/queries';
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
-  
+
   const session = await auth();
   if (!session?.user?.id) {
-    return new Response('Unauthorized', { status: 401 });
+    redirect('/login');
   }
 
   // Get all records and find the specific one

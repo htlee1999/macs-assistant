@@ -5,9 +5,6 @@ import { streamText } from "ai";
 import { match } from "ts-pattern";
 import { customModel } from "@/lib/ai";
 
-// IMPORTANT! Set the runtime to edge: https://vercel.com/docs/functions/edge-functions/edge-runtime
-export const runtime = "edge";
-
 export async function POST(req: Request): Promise<Response> {
   // Check if the OPENAI_API_KEY is set, if not return 400
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY|| process.env.GOOGLE_GENERATIVE_AI_API_KEY === "") {
@@ -130,15 +127,11 @@ export async function POST(req: Request): Promise<Response> {
     ])
     .run();
 
-  const result = await streamText({
-    prompt: messages[0].content + "\n" + messages[1].content,
-    maxTokens: 4096,
-    temperature: 0.7,
-    topP: 1,
-    frequencyPenalty: 0,
-    presencePenalty: 0,
-    model: customModel("gemini-2.0-flash") ,
+  const result = streamText({
+    prompt: `${messages[0].content}\n${messages[1].content}`,
+    model: customModel("gemini-2.0-flash"),
+    experimental_telemetry: { isEnabled: false },
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }

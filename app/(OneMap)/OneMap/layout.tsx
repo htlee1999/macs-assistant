@@ -9,8 +9,6 @@ import { ProcessorProvider } from '@/components/daily-processor'
 
 import { auth } from '@/app/(auth)/auth';
 
-export const experimental_ppr = true;
-
 export default async function Layout({
   children,
 }: {

@@ -89,9 +89,6 @@ export async function POST(req: Request) {
                 const response = await generateText({
                     model: customModel("gemini-2.0-flash"),
                     prompt: headlinesPrompt + `This is the list of feedback summaries:\n${JSON.stringify(feedbackSummaries)}`,
-                    maxTokens: 4096,
-                    temperature: 0.7,
-                    maxSteps: 1,
                 });
 
                 // Parse the OpenAI JSON response
@@ -209,9 +206,6 @@ export async function POST(req: Request) {
                     const response = await generateText({
                         model: customModel("gemini-2.0-flash"),
                         prompt: evergreenPrompt,
-                        maxTokens: 4096,
-                        temperature: 0.7,
-                        maxSteps: 1,
                     });
         
                     // Log raw response for debugging

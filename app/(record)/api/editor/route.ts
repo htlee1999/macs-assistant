@@ -255,9 +255,6 @@ export async function POST(req: Request) {
               Reasoning:\n\n
             
               Draft:`,
-          maxTokens: 4096,
-          temperature: 0.7,
-          maxSteps: 1,
         });
 
         const cleanDraft = result.text
@@ -306,7 +303,8 @@ export async function POST(req: Request) {
         response.hasDraft = true;
       } catch (error) {
         console.error('Error generating/saving draft:', error);
-        return new Response(JSON.stringify({ error: 'Failed to generate/save draft' }), {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return new Response(JSON.stringify({ error: `Failed to generate/save draft: ${errorMessage}` }), {
           status: 500,
           headers: { 'Content-Type': 'application/json' }
         });

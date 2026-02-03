@@ -1,7 +1,7 @@
 "use client";
 
 import { Command, CommandInput } from "@/components/ui/command";
-import { useCompletion } from "ai/react";
+import { useCompletion } from "@ai-sdk/react";
 import { ArrowUp } from "lucide-react";
 // Consolidate novel imports to avoid duplicates
 import { useEditor, addAIHighlight } from "novel";
@@ -26,14 +26,12 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
 
   const { completion, complete, isLoading } = useCompletion({
     api: "/api/ask-ai",
-    onResponse: (response) => {
-      if (response.status === 429) {
-        toast.error("You have reached your request limit for the day.");
-        return;
-      }
-    },
     onError: (e) => {
-      toast.error(e.message);
+      if (e.message.includes("429")) {
+        toast.error("You have reached your request limit for the day.");
+      } else {
+        toast.error(e.message);
+      }
     },
   });
 

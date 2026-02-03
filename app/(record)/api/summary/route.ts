@@ -92,11 +92,6 @@ async function createSummaryAndTopics(message: string): Promise<{ summary: strin
 
   const result = await generateText({
     prompt,
-    maxTokens: 4096,
-    temperature: 0.7,
-    topP: 1,
-    frequencyPenalty: 0,
-    presencePenalty: 0,
     model: customModel("gemini-2.0-flash"),
   });
 

@@ -9,8 +9,6 @@ import { auth } from '../(auth)/auth';
 import { RecordIdProvider } from '@/components/recordIdContext';
 import { ProcessorProvider } from '@/components/daily-processor'
 
-export const experimental_ppr = true;
-
 export default async function Layout({
   children,
 }: {

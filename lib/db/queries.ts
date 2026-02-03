@@ -4,14 +4,13 @@ import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { desc, eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { JSONContent } from 'novel';
-import { randomUUID } from 'crypto';
-import { embed } from 'ai';
+import type { JSONContent } from 'novel';
+import { randomUUID } from 'node:crypto';
 import { generateEmbedding } from '../ai/custom-embedding-model';
 
 import {
   user,
-  record, // NEWLY ADDED
+  record,
   type User,
   headline,
   preferencesTable,
@@ -19,20 +18,19 @@ import {
   type FAQChunk,
 } from './schema';
 import { generateMultipleCustomerMessages } from './randomGenerator';
-import { select } from 'ts-pattern';
-import { Description } from '@radix-ui/react-dialog';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
 // https://authjs.dev/reference/adapter/drizzle
 
-// biome-ignore lint: Forbidden non-null assertion.
-
 // Near the top of your queries.ts file
 console.log("Database URL available:", !!process.env.POSTGRES_URL);
-console.log("Database URL partial:", process.env.POSTGRES_URL?.substring(0, 10) + "...");
+console.log("Database URL partial:", `${process.env.POSTGRES_URL?.substring(0, 10)}...`);
 
-const client = postgres(process.env.POSTGRES_URL!);
+if (!process.env.POSTGRES_URL) {
+  throw new Error("POSTGRES_URL environment variable is not set");
+}
+const client = postgres(process.env.POSTGRES_URL);
 const db = drizzle(client);
 
 
@@ -260,7 +258,7 @@ export async function getRecordsByUserId({ id }: { id: string }): Promise<Databa
 
 export async function getAllRecords(): Promise<DatabaseRecord[]> {
   try {
-    let records = await db
+    const records = await db
       .select()
       .from(record)
       .orderBy(desc(record.creationDate));
@@ -516,36 +514,24 @@ export async function saveHeadlines(newHeadlines: {
   topic?: string;
   score?: string;
 }[]) {
-  try {
-    // Delete all existing headlines
-    await db.delete(headline);
+  // Delete all existing headlines
+  await db.delete(headline);
 
-    // Insert new headlines
-    await db.insert(headline).values(newHeadlines);
+  // Insert new headlines
+  await db.insert(headline).values(newHeadlines);
 
-    return { message: 'Headlines saved successfully' };
-  } catch (error) {
-    throw error;
-  }
+  return { message: 'Headlines saved successfully' };
 }
 
 export async function getHeadlines() {
-  try {
-    // Retrieve headlines sorted by date_processed, assuming you want today's headlines or all headlines
-    const currentHeadlines = await db.select().from(headline);
+  // Retrieve headlines sorted by date_processed, assuming you want today's headlines or all headlines
+  const currentHeadlines = await db.select().from(headline);
 
-    return currentHeadlines;
-  } catch (error) {
-    throw error;
-  }
+  return currentHeadlines;
 }
 
 export async function deleteHeadlines() {
-  try {
-    await db.delete(headline);
-  } catch (error) {
-    throw error
-  }
+  await db.delete(headline);
 }
 
 export async function getPreferencesByUserId({ id }: { id: string }) {
@@ -691,16 +677,6 @@ export async function updateOutcomeById({
       .set({ outcome })
       .where(eq(record.id, recordId))
       .returning(); // Return the updated record
-    
-    // console.log('Outcome update results:', updateResult);
-    
-    // Verify the update by directly querying the record
-    const verificationRecords = await db
-      .select()
-      .from(record)
-      .where(eq(record.id, recordId));
-    
-    // console.log('Verification after update:', verificationRecords[0]);
     
     // Return a success message
     return { 
@@ -874,17 +850,20 @@ export async function storeFAQChunks(items: Array<{
 // Keep your existing text-based search
 
 
-export async function searchFAQChunks(query: string, limit: number = 5): Promise<any[]> {
-  let client = null;
-  
+export async function searchFAQChunks(query: string, limit = 5): Promise<any[]> {
+  let client: ReturnType<typeof postgres> | null = null;
+
   try {
     console.log(`Performing text search for: "${query}"`);
-    
+
     // Prepare the search term
     const searchTerm = `%${query.toLowerCase()}%`;
-    
+
     // Connect to database
-    client = postgres(process.env.POSTGRES_URL!);
+    if (!process.env.POSTGRES_URL) {
+      throw new Error("POSTGRES_URL environment variable is not set");
+    }
+    client = postgres(process.env.POSTGRES_URL);
     
     // Execute the text search query
     const results = await client`
@@ -926,8 +905,8 @@ export async function searchFAQChunks(query: string, limit: number = 5): Promise
 
 export async function findRelevantChunks(
   message: string,
-  similarityThreshold: number = 0.86,
-  limit: number = 5
+  _similarityThreshold = 0.86,
+  limit = 5
 ): Promise<Array<{ content: string; heading: string; category?: string; section?: string; similarity: number }>> {
   try {
     console.log(`Performing vector search for: "${message}"`);

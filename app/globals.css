@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -203,14 +202,14 @@
   
   /* Fix for Novel editor's content editable elements */
   [contenteditable] h1,
-  [contenteditable] h2, 
+  [contenteditable] h2,
   [contenteditable] h3 {
-    @apply font-semibold !important;
+    @apply !font-semibold;
   }
-  
+
   [contenteditable] strong,
   [contenteditable] b {
-    @apply font-bold !important;
+    @apply !font-bold;
   }
 }
 
