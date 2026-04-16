@@ -2,19 +2,18 @@ import { auth } from '@/app/(auth)/auth';
 import { generateText } from 'ai';
 import { getRecordsByUserId, updateRecordSummary, updateRecordTopics, saveRecordsByUserId, insertNewRecord } from '@/lib/db/queries';
 import { customModel } from "@/lib/ai";
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export async function GET(req: Request) {
   const session = await auth();
   const url = new URL(req.url);
   const generateSummary = url.searchParams.get('generateSummary') === 'true';
 
-  if (!session || !session.user) {
+  if (!session?.user?.id) {
     return Response.json('Unauthorized!', { status: 401 });
   }
 
-  // biome-ignore lint: Forbidden non-null assertion.
-  const records = await getRecordsByUserId({ id: session.user.id! });
+  const records = await getRecordsByUserId({ id: session.user.id });
 
   // Check and generate summary for records with empty summary
   if(generateSummary){
@@ -51,7 +50,7 @@ export async function GET(req: Request) {
 export async function POST(req: NextRequest) {
   const session = await auth();
 
-  if (!session || !session.user) {
+  if (!session?.user?.id) {
     return Response.json('Unauthorized!', { status: 401 });
   }
 
@@ -62,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     if (generateSamples) {
       // Original functionality to generate sample records
-      await saveRecordsByUserId({ id: session.user.id!, samples: 13 });
+      await saveRecordsByUserId({ id: session.user.id, samples: 13 });
       return Response.json({ message: 'Sample records generated successfully' });
     } else {
       // New functionality to create a single record
@@ -81,7 +80,7 @@ export async function POST(req: NextRequest) {
       
       // Call the database function to insert the record
       const newRecord = await insertNewRecord({
-        userId: session.user.id!,
+        userId: session.user.id,
         message,
         category,
         subcategory
@@ -148,7 +147,7 @@ async function createSummaryAndTopics(message: string): Promise<{ summary: strin
 
   const result = await generateText({
     prompt,
-    model: customModel("gemini-2.0-flash"),
+    model: customModel("gemini-2.5-flash"),
   });
 
   try {

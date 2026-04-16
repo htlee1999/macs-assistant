@@ -12,7 +12,6 @@ export async function POST(req: Request) {
         return Response.json('Unauthorized!', { status: 401 });
     }
 
-    // biome-ignore lint: Forbidden non-null assertion.
     const { records } = await req.json();
     try {
         for (const record of records) {
@@ -92,7 +91,7 @@ async function createSummaryAndTopics(message: string): Promise<{ summary: strin
 
   const result = await generateText({
     prompt,
-    model: customModel("gemini-2.0-flash"),
+    model: customModel("gemini-2.5-flash"),
   });
 
   let summary = "";

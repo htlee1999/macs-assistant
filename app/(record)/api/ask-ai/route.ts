@@ -1,4 +1,3 @@
-import { google} from "@ai-sdk/google";
 import { Ratelimit } from "@upstash/ratelimit";
 import { kv } from "@vercel/kv";
 import { streamText } from "ai";
@@ -46,17 +45,13 @@ export async function POST(req: Request): Promise<Response> {
 
 
   const { prompt, option, command } = await req.json();
-  const full_prompt = "Please only change the text in your response. Do not add any commentary" + prompt.replace(/<[^>]*>/g, '')
+  const full_prompt = `Please only change the text in your response. Do not add any commentary${prompt.replace(/<[^>]*>/g, '')}`
   console.log(option)
   const messages = match(option)
     .with("continue", () => [
       {
         role: "system",
-        content: rules +
-          "You will be continuing existing text based on context from prior text. " +
-          "Give more weight/priority to the later characters than the beginning ones. " +
-          "Limit your response to no more than 200 characters, but make sure to construct complete sentences." +
-          "Use Markdown formatting when appropriate.",
+        content: `${rules}You will be continuing existing text based on context from prior text. Give more weight/priority to the later characters than the beginning ones. Limit your response to no more than 200 characters, but make sure to construct complete sentences. Use Markdown formatting when appropriate.`,
       },
       {
         role: "user",
@@ -66,10 +61,7 @@ export async function POST(req: Request): Promise<Response> {
     .with("improve", () => [
       {
         role: "system",
-        content: rules + 
-          "You will be improving the existing text. " +
-          "Limit your response to no more than 200 characters, but make sure to construct complete sentences." +
-          "Use Markdown formatting when appropriate.",
+        content: `${rules}You will be improving the existing text. Limit your response to no more than 200 characters, but make sure to construct complete sentences. Use Markdown formatting when appropriate.`,
       },
       {
         role: "user",
@@ -79,8 +71,7 @@ export async function POST(req: Request): Promise<Response> {
     .with("shorter", () => [
       {
         role: "system",
-        content: rules + 
-          "You will be shortening the following text appropriately. Use Markdown formatting when appropriate.",
+        content: `${rules}You will be shortening the following text appropriately. Use Markdown formatting when appropriate.`,
       },
       {
         role: "user",
@@ -90,9 +81,7 @@ export async function POST(req: Request): Promise<Response> {
     .with("longer", () => [
       {
         role: "system",
-        content: rules +
-          "You will be lengthening existing text. " +
-          "Use Markdown formatting when appropriate.",
+        content: `${rules}You will be lengthening existing text. Use Markdown formatting when appropriate.`,
       },
       {
         role: "user",
@@ -102,10 +91,7 @@ export async function POST(req: Request): Promise<Response> {
     .with("fix", () => [
       {
         role: "system",
-        content: rules +
-          "You will be fixing grammar and spelling errors in existing text. " +
-          "Limit your response to no more than 200 characters, but make sure to construct complete sentences." +
-          "Use Markdown formatting when appropriate.",
+        content: `${rules}You will be fixing grammar and spelling errors in existing text. Limit your response to no more than 200 characters, but make sure to construct complete sentences. Use Markdown formatting when appropriate.`,
       },
       {
         role: "user",
@@ -115,10 +101,7 @@ export async function POST(req: Request): Promise<Response> {
     .with("zap", () => [
       {
         role: "system",
-        content: rules +
-          "You will now generate text based on a given prompt. " +
-          "You take an input from the user and a command for manipulating the text" +
-          "Use Markdown formatting when appropriate.",
+        content: `${rules}You will now generate text based on a given prompt. You take an input from the user and a command for manipulating the text. Use Markdown formatting when appropriate.`,
       },
       {
         role: "user",
@@ -129,7 +112,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const result = streamText({
     prompt: `${messages[0].content}\n${messages[1].content}`,
-    model: customModel("gemini-2.0-flash"),
+    model: customModel("gemini-2.5-flash"),
     experimental_telemetry: { isEnabled: false },
   });
 

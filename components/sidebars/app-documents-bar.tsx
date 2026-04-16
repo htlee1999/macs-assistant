@@ -182,11 +182,8 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
   return (
     <>
       <DocumentsBar
-        className={`border-l border-border w-[300px] transition-transform duration-200 ${
-          state === 'collapsed' || documentViewOpen
-            ? 'translate-x-full'
-            : 'translate-x-0'
-        }`}
+        collapsible="none"
+        className="h-full border-l border-border"
         ref={barRef}
       >
         <DocumentsBarHeader>

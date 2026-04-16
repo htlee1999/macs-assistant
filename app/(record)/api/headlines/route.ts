@@ -87,8 +87,8 @@ export async function POST(req: Request) {
 
                 // Make the OpenAI API call
                 const response = await generateText({
-                    model: customModel("gemini-2.0-flash"),
-                    prompt: headlinesPrompt + `This is the list of feedback summaries:\n${JSON.stringify(feedbackSummaries)}`,
+                    model: customModel("gemini-2.5-flash"),
+                    prompt: `${headlinesPrompt}This is the list of feedback summaries:\n${JSON.stringify(feedbackSummaries)}`,
                 });
 
                 // Parse the OpenAI JSON response
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
             try {
                 console.log("🔄 Starting to process evergreen topics...");
         
-                let evergreenTrends: any[] = [];
+                const evergreenTrends: any[] = [];
                 const evergreenTopics = [
                     "Food Information",
                     "Delivery Orders",
@@ -204,7 +204,7 @@ export async function POST(req: Request) {
                     `;
         
                     const response = await generateText({
-                        model: customModel("gemini-2.0-flash"),
+                        model: customModel("gemini-2.5-flash"),
                         prompt: evergreenPrompt,
                     });
         

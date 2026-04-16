@@ -10,7 +10,6 @@ import {
   findRelevantChunks // Import the new function
 } from '@/lib/db/queries';
 import { generateEditorContent } from '@/lib/editor/content';
-import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import type { JSONContent } from 'novel';
 import { customModel } from '@/lib/ai';
@@ -94,7 +93,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    let response: any = {
+    const response: any = {
       emailData: null,
       editorState: null,
       generatedDraft: null,
@@ -217,13 +216,9 @@ export async function POST(req: Request) {
       }).join('<p></p>');
 
       // Format related replies for inclusion in the prompt
-      let formattedRelatedReplies = '';
-      if (relatedReplies.length > 0) {
-        formattedRelatedReplies = `\n\nHere are some related emails and how they were replied to (ordered by relevance):\n\n` +
-          relatedReplies.map((item, index) => 
-            `EXAMPLE ${index + 1}:\nOriginal email: ${item.message}\nReply: ${item.reply}\n`
-          ).join('\n');
-      }
+      const formattedRelatedReplies = relatedReplies.length > 0
+        ? `\n\nHere are some related emails and how they were replied to (ordered by relevance):\n\n${relatedReplies.map((item, index) => `EXAMPLE ${index + 1}:\nOriginal email: ${item.message}\nReply: ${item.reply}\n`).join('\n')}`
+        : '';
 
       try {
         const rules = `You are representing as a McDonald's official helping to draft email responses. You do not have to explicitly state your role. Abide by the following rules when writing.\n\n
@@ -238,22 +233,22 @@ export async function POST(req: Request) {
         Focus on clarity.\n\n`;
 
         const result = await generateText({
-          model: customModel("gemini-2.0-flash"),
-          prompt: rules + `Please draft a response to this email:\n
+          model: customModel("gemini-2.5-flash"),
+          prompt: `${rules}Please draft a response to this email:\n
               Content: ${record.message}\n
-              
+
               Below is some potentially related information to the email. Please use the information appropriately. \n\n
 
               ${formattedChunks}\n\n
               ${formattedRelatedReplies}\n\n
-              
-              When drafting your response, consider the patterns and tone in the example replies if they're provided, 
+
+              When drafting your response, consider the patterns and tone in the example replies if they're provided,
               but make sure to adapt your response specifically to this new email.
-              
+
               Please provide the reasoning to how the given information is related to the email. You are to strictly write in the following format.\n\n
-            
+
               Reasoning:\n\n
-            
+
               Draft:`,
         });
 

@@ -58,6 +58,7 @@ We based our solution off the fantastic work done by Greg over at [Rabbit Hole S
 - Watch [Greg's](https://twitter.com/ggrdson) "How I built this" [video](https://youtu.be/Yhtjd7yGGGA) on the [Rabbit Hole Syndrome YouTube Channel](https://www.youtube.com/@RabbitHoleSyndrome).
 - The editing function of the app comes from Novel (https://github.com/steven-tey/novel/blob/main/README.md)
 
+
 The frontend library used in this Beta is created by [Vercel](https://vercel.com) and [Next.js](https://nextjs.org) team members, with contributions from:
 
 - Jared Palmer ([@jaredpalmer](https://twitter.com/jaredpalmer)) - [Vercel](https://vercel.com)
