@@ -8,8 +8,8 @@ import { DraftHeader } from '@/components/editor/draft-header';
 import { generateEditorContent } from '@/lib/editor/content';
 import EmailPreview from './email-preview';
 import { NovelEditor } from './noveleditor';
-import { JSONContent } from 'novel';
-import { type RecordStatus } from './status-selector';
+import type { JSONContent } from 'novel';
+import type { RecordStatus } from './status-selector';
 
 interface Prompt {
   id: string;
@@ -88,7 +88,7 @@ export function EmailDraftingPage({
 
         if (response.ok) {
           // Process draft data if it exists
-          let newEditorContent = data.draft;
+          const newEditorContent = data.draft;
           let newVisibility = false;
 
           if (newEditorContent) {
@@ -356,7 +356,7 @@ export function EmailDraftingPage({
                   className="absolute inset-0 flex justify-center items-center"
                 >
                   <div className="flex flex-col items-center space-y-2">
-                    <div className="size-10 border-4 border-gray-300 rounded-full animate-spin border-t-blue-500"></div>
+                    <div className="size-10 border-4 border-gray-300 rounded-full animate-spin border-t-blue-500" />
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}

@@ -5,7 +5,6 @@ import { memo, useState, useEffect } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { MailPlus, FileText, X } from 'lucide-react';
 import Select from 'react-select';
-import { components } from 'react-select'
 import CSVChunksProcessor from './csv-chunks';
 
 // Remove the imported createNewRecord function from queries.ts

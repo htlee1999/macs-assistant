@@ -12,7 +12,7 @@ import {
 import Referencing from './referencing';
 import DocumentView from './view-docs';
 import { DocumentsIcon, EmailsIcon, CrossIcon, BookOpenIcon } from '@/components/ui/icons';
-import { JSONContent } from 'novel';
+import type { JSONContent } from 'novel';
 
 interface RelevantChunk {
   content: string;
@@ -227,11 +227,10 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
 
         <DocumentsBarContent>
           {view === 'documents' && (
-            <>
-              {isLoading ? (
+            isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <p className="text-sm text-muted-foreground mb-2">Loading references...</p>
-                  <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse" />
                 </div>
               ) : error ? (
                 <div className="flex items-center justify-center h-full">
@@ -243,8 +242,7 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
                 <div className="flex flex-col items-center justify-center h-full p-4">
                   <p className="text-sm text-muted-foreground">No references available</p>
                 </div>
-              )}
-            </>
+              )
           )}
 
           {view === 'emails' && (
@@ -253,7 +251,7 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center grow">
                   <p className="text-sm text-muted-foreground mb-2">Loading related emails...</p>
-                  <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse" />
                 </div>
               ) : error ? (
                 <div className="flex items-center justify-center grow">

@@ -123,7 +123,7 @@ export async function POST(req: Request) {
    if (insertedCount > 0 && formattedItems.length > 0) {
      try {
        // Select a random item that has an embedding
-       const itemsWithEmbeddings = formattedItems.filter(item => item && item.embedding);
+       const itemsWithEmbeddings = formattedItems.filter(item => item?.embedding);
        
        if (itemsWithEmbeddings.length > 0) {
          const randomIndex = Math.floor(Math.random() * itemsWithEmbeddings.length);
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
      // Include embedding test results if available
      embeddingTest: embeddingTestResult,
      embeddingStats: {
-       itemsWithEmbeddings: formattedItems.filter(item => item && item.embedding).length,
+       itemsWithEmbeddings: formattedItems.filter(item => item?.embedding).length,
        itemsWithoutEmbeddings: formattedItems.filter(item => item && !item.embedding).length
      }
    }), {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, ChangeEvent } from 'react';
+import React, { useState, useCallback, type ChangeEvent } from 'react';
 import Papa from 'papaparse';
 
 interface FAQItem {
@@ -145,8 +145,8 @@ const CSVChunksProcessor: React.FC = () => {
   };
 
   const handleBatchSizeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const size = parseInt(e.target.value, 10);
-    if (!isNaN(size) && size > 0) {
+    const size = Number.parseInt(e.target.value, 10);
+    if (!Number.isNaN(size) && size > 0) {
       setBatchSize(size);
     }
   };
@@ -278,7 +278,7 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
             <div 
               className="bg-blue-600 h-4 rounded-full transition-all"
               style={{ width: `${Math.min((processedRows / totalRows) * 100, 100)}%` }}
-            ></div>
+            />
           </div>
           <p className="text-sm text-gray-600">
             Processing: {processedRows} rows ({totalRows > 0 ? Math.floor((processedRows / totalRows) * 100) : 0}%)

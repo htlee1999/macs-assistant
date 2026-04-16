@@ -1,5 +1,4 @@
-// types/leaflet-hexbin.d.ts
-import * as L from 'leaflet';
+
 
 declare module 'leaflet' {
   namespace L {

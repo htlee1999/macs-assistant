@@ -1,7 +1,8 @@
 // H3HeatmapLayer.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
-import L from 'leaflet';
+import leaflet from 'leaflet';
+const L = leaflet as any;
 import * as h3 from 'h3-js';
 
 interface LocationData {
@@ -37,9 +38,9 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
   }
 }) => {
   const map = useMap();
-  const hexLayerRef = useRef<L.LayerGroup | null>(null);
+  const hexLayerRef = useRef<any | null>(null);
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
-  const [hexagons, setHexagons] = useState<Map<string, L.Polygon>>(new Map());
+  const [hexagons, setHexagons] = useState<Map<string, any>>(new Map());
   
   // Dynamically adjust resolution based on zoom level
   const getResolutionForZoom = (zoom: number): number => {
@@ -56,7 +57,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
     // At higher zoom levels, hide hexagons
     const shouldHideHexagons = zoom >= 16;
     
-    hexagons.forEach((polygon, hexId) => {
+    hexagons.forEach((polygon, _hexId) => {
       if (shouldHideHexagons) {
         // Hide hexagons at high zoom levels
         polygon.setStyle({ fillOpacity: 0, opacity: 0 });
@@ -213,7 +214,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             if (!cellsToLocations.has(cellId)) {
               cellsToLocations.set(cellId, []);
             }
-            cellsToLocations.get(cellId)!.push(loc);
+            cellsToLocations.get(cellId)?.push(loc);
             
             addedCells.add(cellId);
           } catch (error) {
@@ -231,7 +232,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
         console.log(`Outlet counts range: ${minCount} to ${maxCount}`);
         
         // Step 3: Render hexagons for each cell with outlets
-        const newHexagons = new Map<string, L.Polygon>();
+        const newHexagons = new Map<string, any>();
         
         Array.from(addedCells).forEach(hexId => {
           try {
@@ -274,7 +275,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             
             // Add hover effects and dynamic tooltip display if enabled
             if (options.enableHover) {
-              polygon.on('mouseover', (e) => {
+              polygon.on('mouseover', (e: any) => {
                 if (currentZoom < 16) { // Only show effects if not at high zoom
                   // Increase opacity on hover but don't exceed 1
                   const hoverOpacity = Math.min(1, consistentOpacity * 1.5);
@@ -289,7 +290,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
                 }
               });
               
-              polygon.on('mouseout', (e) => {
+              polygon.on('mouseout', (e: any) => {
                 if (currentZoom < 16) { // Only reset if not at high zoom
                   // Use consistent opacity when not hovering
                   e.target.setStyle({ 
@@ -305,7 +306,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             }
             
             // Add cell info on click with zoom functionality
-            polygon.on('click', (e) => {
+            polygon.on('click', (_e: any) => {
               const cellCenter = h3.cellToLatLng(hexId);
               
               // Create popup content with list of outlets

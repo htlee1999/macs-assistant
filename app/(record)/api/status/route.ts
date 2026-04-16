@@ -1,6 +1,6 @@
 import { auth } from '@/app/(auth)/auth';
-import { getRecordById, updateOutcomeById, deleteDraftById, getOutcomeById } from '@/lib/db/queries';
-import { NextRequest } from 'next/server';
+import { getRecordById, updateOutcomeById, getOutcomeById } from '@/lib/db/queries';
+import type { NextRequest } from 'next/server';
 
 export async function POST(req: Request) {
   try {
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
 
     // Force "Replied" status if the record has a reply
     let finalOutcome = outcome;
-    if (record && record.reply && outcome !== 'Replied') {
+    if (record?.reply && outcome !== 'Replied') {
       console.log(`Record ${recordId} has a reply but outcome is ${outcome}. Returning "Replied" status.`);
       finalOutcome = 'Replied';
       

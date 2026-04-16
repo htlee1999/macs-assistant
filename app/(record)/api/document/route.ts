@@ -1,7 +1,7 @@
 // app/api/document/route.ts
 import { auth } from '@/app/(auth)/auth';
 import { getRecordById, getSomeRecordsById } from '@/lib/db/queries';
-import { JSONContent } from 'novel';
+import type { JSONContent } from 'novel';
 
 // Define types for our related email objects
 interface RelatedEmailDetail {

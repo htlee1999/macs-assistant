@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 
 import { AppSidebar } from '@/components/sidebars/app-sidebar';
@@ -5,32 +6,40 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { DocumentsBarInset, DocumentsBarProvider } from '@/components/ui/documents-bar';
 import { AppDocumentsBar } from '@/components/sidebars/app-documents-bar';
 import { RecordIdProvider } from '@/components/recordIdContext';
-import { ProcessorProvider } from '@/components/daily-processor'
+import { ProcessorProvider } from '@/components/daily-processor';
 
 import { auth } from '@/app/(auth)/auth';
 
-export default async function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function LayoutShell({ children }: { children: React.ReactNode }) {
   const [session, cookieStore] = await Promise.all([auth(), cookies()]);
   const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
 
   return (
+    <SidebarProvider defaultOpen={!isCollapsed}>
+      <DocumentsBarProvider defaultOpen={false}>
+        <div className="flex flex-row h-screen w-full">
+          <AppSidebar user={session?.user} />
+          <DocumentsBarInset>
+            <SidebarInset>{children}</SidebarInset>
+          </DocumentsBarInset>
+          <AppDocumentsBar />
+        </div>
+      </DocumentsBarProvider>
+    </SidebarProvider>
+  );
+}
+
+export default function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
     <ProcessorProvider>
       <RecordIdProvider>
-        <SidebarProvider defaultOpen={!isCollapsed}>
-          <DocumentsBarProvider defaultOpen={false}>
-            <div className="flex flex-row h-screen w-full">
-              <AppSidebar user={session?.user} />
-              <DocumentsBarInset>
-                <SidebarInset>{children}</SidebarInset>
-              </DocumentsBarInset>
-              <AppDocumentsBar/>
-            </div>
-          </DocumentsBarProvider>
-        </SidebarProvider>
+        <Suspense fallback={null}>
+          <LayoutShell>{children}</LayoutShell>
+        </Suspense>
       </RecordIdProvider>
     </ProcessorProvider>
   );

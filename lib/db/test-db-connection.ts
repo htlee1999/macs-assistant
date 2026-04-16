@@ -1,5 +1,5 @@
 // Enhanced debugging for database connection
-import { Pool, PoolClient } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 
 // Start with immediate console output
 console.log("===== SCRIPT STARTING =====");

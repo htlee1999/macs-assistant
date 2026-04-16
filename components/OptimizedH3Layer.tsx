@@ -1,7 +1,8 @@
 // OptimizedH3Layer.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
-import L from 'leaflet';
+import leaflet from 'leaflet';
+const L = leaflet as any;
 import * as h3 from 'h3-js';
 
 interface H3LayerProps {
@@ -28,7 +29,7 @@ const OptimizedH3Layer: React.FC<H3LayerProps> = ({
   }
 }) => {
   const map = useMap();
-  const hexLayerRef = useRef<L.LayerGroup | null>(null);
+  const hexLayerRef = useRef<any>(null);
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
   
   // Dynamically adjust resolution based on zoom level
@@ -131,7 +132,7 @@ const OptimizedH3Layer: React.FC<H3LayerProps> = ({
             
             // Add hover effects if enabled
             if (options.enableHover) {
-              polygon.on('mouseover', (e) => {
+              polygon.on('mouseover', (e: any) => {
                 e.target.setStyle({ 
                   fillOpacity: Math.min(1, (options.opacity || 0.7) * 1.5), 
                   weight: (options.strokeWidth || 2) * 1.5,
@@ -139,7 +140,7 @@ const OptimizedH3Layer: React.FC<H3LayerProps> = ({
                 });
               });
               
-              polygon.on('mouseout', (e) => {
+              polygon.on('mouseout', (e: any) => {
                 e.target.setStyle({ 
                   fillOpacity: options.opacity, 
                   weight: options.strokeWidth,
@@ -149,7 +150,7 @@ const OptimizedH3Layer: React.FC<H3LayerProps> = ({
             }
             
             // Add cell info on click
-            polygon.on('click', (e) => {
+            polygon.on('click', (_e: any) => {
               const cellCenter = h3.cellToLatLng(hexId);
               L.popup()
                 .setLatLng([cellCenter[0], cellCenter[1]])

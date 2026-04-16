@@ -3,8 +3,6 @@ import Link from 'next/link';
 import type { User } from 'next-auth';
 import { useState, useMemo, useEffect, useCallback } from 'react'; 
 import useSWR, { mutate } from 'swr';
-import { useProcessorContext } from '@/components/daily-processor';
-import { fetcher } from '@/lib/utils'
 
 import {
   SidebarGroup,
@@ -26,7 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import type { Record } from '@/lib/db/schema';
-import { type EmailOutcome } from '../editor/status-selector';
+import type { EmailOutcome } from '../editor/status-selector';
 
 type GroupedRecords = {
   today: Record[];
@@ -173,7 +171,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     
     return () => {
       if (typeof window !== 'undefined') {
-        delete (window as any).refreshSidebarHistory;
+        (window as any).refreshSidebarHistory = undefined;
       }
     };
   }, []);
@@ -218,7 +216,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     
     return () => {
       if (typeof window !== 'undefined') {
-        delete (window as any).updateSidebarItemOutcome;
+        (window as any).updateSidebarItemOutcome = undefined;
       }
     };
   }, [updateLocalOutcome]);
@@ -479,7 +477,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
             {isLoading ? (
               <div className="flex items-center justify-center p-4 flex-col">
                 <div className="mb-2">Loading records...</div>
-                <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+                <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse" />
               </div>
             ) : filteredByType.length === 0 ? (
               <div className="px-4 py-8 text-sm text-zinc-500 text-center">

@@ -78,7 +78,7 @@ export const faqChunks = pgTable('faq_chunks', {
   section: varchar('section', { length: 100 }).notNull(),
   heading: text('heading').notNull(),
   content: text('content').notNull(),
-  embedding: pgVectorColumn('embedding', { dimensions: 153 }), // Vector column is now properly defined
+  embedding: pgVectorColumn('embedding', { dimensions: 768 }),
   
 });
 
@@ -137,7 +137,7 @@ export const preferencesTable = pgTable(
 export type Preferences = InferSelectModel<typeof preferencesTable>;
 
 // Add utility function to search FAQ chunks 
-export async function searchFAQChunks(db: any, query: string, limit: number = 5) {
+export async function searchFAQChunks(db: any, query: string, limit = 5) {
   // For now, this is a simple text search
   // In production, you might want to use more advanced search features like full-text search
   

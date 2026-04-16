@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
+import nextDynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 
 // Define the props interface for OneMap component
@@ -38,11 +38,11 @@ interface LocationData {
 }
 
 // Use dynamic import with ssr: false to avoid server-side rendering issues with Leaflet
-const OneMap = dynamic<OneMapProps>(() => import('@/components/onemap'), {
+const OneMap = nextDynamic<OneMapProps>(() => import('@/components/onemap'), {
   ssr: false,
   loading: () => (
     <div className="flex h-[800px] items-center justify-center bg-gray-100">
-      <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+      <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent" />
     </div>
   )
 });

@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import { ChevronLeft, X, MessageSquare } from 'lucide-react';
-import { JSONContent } from 'novel';
+import type { JSONContent } from 'novel';
 
 // Extended interface to include optional draft and reply
 interface DocumentViewProps {
@@ -165,7 +165,7 @@ const renderDraftContent = (draft: JSONContent | null | undefined): React.ReactN
       }
       
       // Handle headings
-      if (node.type && node.type.startsWith('heading') && node.content) {
+      if (node.type?.startsWith('heading') && node.content) {
         const HeadingTag = node.type === 'heading1' ? 'h1' : 
                           node.type === 'heading2' ? 'h2' : 
                           node.type === 'heading3' ? 'h3' : 'h4';

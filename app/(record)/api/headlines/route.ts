@@ -1,15 +1,221 @@
-// api/headlines
+import { getHeadlines, deleteHeadlines, saveHeadlines, getAllRecords } from '@/lib/db/queries';
+import { generateEmbedding } from '@/lib/ai/custom-embedding-model';
+import DBSCAN from 'density-clustering/lib/DBSCAN';
 
-import { getHeadlines, saveHeadlines, deleteHeadlines, getAllRecords } from '@/lib/db/queries'; 
-import { customModel } from "@/lib/ai";
-import { generateText } from 'ai';
+const MAX_HEADLINES = 10;
+const DBSCAN_EPSILON = 0.35;
+const DBSCAN_MIN_POINTS = 2;
 
-export async function GET(req: Request) {
+const EVERGREEN_TOPICS = [
+  "Food Information",
+  "Delivery Orders",
+  "Promotions",
+  "Restaurant Information",
+  "The McDonald's App",
+  "Gift Certificates",
+  "Large Orders",
+  "McDelivery Service",
+  "Drive-Thru",
+  "Happy Meal",
+  "Celebrating Birthdays",
+];
+
+function cosineDist(a: number[], b: number[]): number {
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 1 : 1 - dot / denom;
+}
+
+function extractKeywords(texts: string[], topN = 5): string[] {
+  const stopWords = new Set([
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'shall', 'can', 'need', 'dare', 'ought',
+    'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as',
+    'into', 'through', 'during', 'before', 'after', 'above', 'below',
+    'between', 'out', 'off', 'over', 'under', 'again', 'further', 'then',
+    'once', 'and', 'but', 'or', 'nor', 'not', 'so', 'yet', 'both',
+    'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no',
+    'only', 'own', 'same', 'than', 'too', 'very', 'just', 'because',
+    'this', 'that', 'these', 'those', 'i', 'me', 'my', 'we', 'our',
+    'you', 'your', 'he', 'him', 'his', 'she', 'her', 'it', 'its',
+    'they', 'them', 'their', 'what', 'which', 'who', 'whom', 'when',
+    'where', 'why', 'how', 'all', 'about', 'up',
+  ]);
+
+  const wordCounts = new Map<string, number>();
+  const docFreq = new Map<string, number>();
+
+  for (const text of texts) {
+    const words = text.toLowerCase().split(/\W+/).filter(w => w.length > 2 && !stopWords.has(w));
+    const seen = new Set<string>();
+    for (const word of words) {
+      wordCounts.set(word, (wordCounts.get(word) ?? 0) + 1);
+      if (!seen.has(word)) {
+        docFreq.set(word, (docFreq.get(word) ?? 0) + 1);
+        seen.add(word);
+      }
+    }
+  }
+
+  const scored = [...wordCounts.entries()].map(([word, count]) => {
+    const df = docFreq.get(word) ?? 1;
+    const tfidf = count * Math.log(texts.length / df);
+    return { word, score: tfidf };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, topN).map(s => s.word);
+}
+
+function countByKey(arr: string[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const v of arr) m.set(v, (m.get(v) ?? 0) + 1);
+  return m;
+}
+
+interface RecordRow {
+  summary: string | null;
+  category: string;
+  evergreen_topics: string[] | null;
+}
+
+async function embedSummaries(summaries: string[]): Promise<number[][]> {
+  const embeddings: number[][] = [];
+  for (const s of summaries) {
+    embeddings.push(await generateEmbedding(s));
+  }
+  return embeddings;
+}
+
+function runDBSCAN(embeddings: number[][], epsilon: number, minPoints: number): number[] {
+  const dbscan = new DBSCAN();
+  const clusters: number[][] = dbscan.run(embeddings, epsilon, minPoints, cosineDist);
+
+  const labels = new Array(embeddings.length).fill(-1);
+  for (let cid = 0; cid < clusters.length; cid++) {
+    for (const idx of clusters[cid]) {
+      labels[idx] = cid;
+    }
+  }
+  return labels;
+}
+
+function buildHeadlines(
+  records: RecordRow[],
+  summaries: string[],
+  labels: number[],
+  headlineType: string,
+) {
+  const total = summaries.length;
+  const clusterIds = new Set(labels.filter(l => l !== -1));
+
+  const headlines: any[] = [];
+
+  for (const cid of clusterIds) {
+    const indices = labels.map((l, i) => (l === cid ? i : -1)).filter(i => i !== -1);
+    const clusterTexts = indices.map(i => summaries[i]);
+    const clusterCategories = indices.map(i => records[i].category || '');
+
+    const pct = Math.round((indices.length / total) * 1000) / 10;
+    const keywords = extractKeywords(clusterTexts, 5);
+    const title = keywords.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(', ');
+    const catCounts = countByKey(clusterCategories);
+    const topCategory = [...catCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+
+    headlines.push({
+      title,
+      match_percent: String(pct),
+      desc: `Cluster of ${indices.length} records (${pct}% of total). Key terms: ${keywords.join(', ')}.`,
+      entities: keywords.join(', '),
+      examples: clusterTexts.slice(0, 3).join(' | '),
+      category: topCategory,
+      date_processed: new Date(),
+      type: headlineType,
+      topic: null,
+      score: null,
+    });
+  }
+
+  headlines.sort((a, b) => Number.parseFloat(b.match_percent) - Number.parseFloat(a.match_percent));
+  return headlines.slice(0, MAX_HEADLINES);
+}
+
+function buildEvergreenHeadlines(
+  records: RecordRow[],
+  summaries: string[],
+  embeddings: number[][],
+) {
+  const headlines: any[] = [];
+
+  for (const topic of EVERGREEN_TOPICS) {
+    const indices: number[] = [];
+    for (let i = 0; i < records.length; i++) {
+      if (records[i].evergreen_topics?.includes(topic)) {
+        indices.push(i);
+      }
+    }
+
+    if (indices.length < DBSCAN_MIN_POINTS) continue;
+
+    const topicTexts = indices.map(i => summaries[i]);
+    const topicEmbeddings = indices.map(i => embeddings[i]);
+
+    if (indices.length >= DBSCAN_MIN_POINTS * 2) {
+      const subLabels = runDBSCAN(topicEmbeddings, DBSCAN_EPSILON, DBSCAN_MIN_POINTS);
+      const subClusters = new Set(subLabels.filter(l => l !== -1));
+
+      let count = 0;
+      for (const cid of subClusters) {
+        if (count >= 3) break;
+        const subIndices = subLabels.map((l, i) => (l === cid ? i : -1)).filter(i => i !== -1);
+        const subTexts = subIndices.map(j => topicTexts[j]);
+        const keywords = extractKeywords(subTexts, 5);
+
+        headlines.push({
+          title: keywords.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(', '),
+          match_percent: 'N/A',
+          desc: `Sub-trend in '${topic}' with ${subIndices.length} records. Key terms: ${keywords.join(', ')}.`,
+          entities: keywords.join(', '),
+          examples: subTexts.slice(0, 3).join(' | '),
+          category: 'Evergreen',
+          date_processed: new Date(),
+          type: 'evergreen',
+          topic,
+          score: null,
+        });
+        count++;
+      }
+    } else {
+      const keywords = extractKeywords(topicTexts, 5);
+      headlines.push({
+        title: keywords.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(', '),
+        match_percent: 'N/A',
+        desc: `Evergreen topic '${topic}' with ${indices.length} records. Key terms: ${keywords.join(', ')}.`,
+        entities: keywords.join(', '),
+        examples: topicTexts.slice(0, 3).join(' | '),
+        category: 'Evergreen',
+        date_processed: new Date(),
+        type: 'evergreen',
+        topic,
+        score: null,
+      });
+    }
+  }
+
+  return headlines;
+}
+
+export async function GET() {
   try {
-    // Call the getHeadlines function to retrieve the headlines
     const currentHeadlines = await getHeadlines();
-
-    // Return the headlines as JSON response
     return Response.json(currentHeadlines);
   } catch (error) {
     console.error("Error fetching headlines:", error);
@@ -17,272 +223,75 @@ export async function GET(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
-    try {
-        await deleteHeadlines();
-    } catch (error) {
-      console.error("Error fetching headlines:", error);
-      return new Response("Error fetching headlines", { status: 500 });
-    }
+export async function DELETE() {
+  try {
+    await deleteHeadlines();
+    return Response.json({ message: "Headlines deleted" });
+  } catch (error) {
+    console.error("Error deleting headlines:", error);
+    return new Response("Error deleting headlines", { status: 500 });
   }
+}
 
-export async function POST(req: Request) {
-    const records = await getAllRecords();
-    try {
-        async function fetchHeadlines(fromDate?: Date): Promise<any[]> {
-            try {
-                let filteredRecords: any[] = [];
-                
-                if(fromDate) {
-                    // Filter records based on the provided date
-                    filteredRecords = records.filter(record => {
-                        const recordDate = new Date(record.creationDate)
-                        return recordDate >= fromDate;
-                    });
-                } else {
-                    filteredRecords = records
-                }
+export async function POST() {
+  try {
+    const allRecords = await getAllRecords();
 
-                // Extract summaries from the filtered records
-                const feedbackSummaries = filteredRecords
-                    .map(record => record.summary)
-                    .filter(summary => summary && summary.trim() !== "");
+    const validRecords = allRecords.filter(
+      (r) => r.summary && r.summary.trim() !== '',
+    );
 
-                if (feedbackSummaries.length === 0) {
-                    console.log("No feedback summaries found.");
-                    return [];
-                }
-
-                const headlinesPrompt = `
-                    You are an AI assistant specialized in natural language processing, particularly in topic modeling and text analysis.
-                    You will be given a list of summaries of feedback from the public to analyze, and your task is to identify and rank the top 10 most frequently discussed specific issues and events, as headlines.
-                    These should primarily be concrete projects, locations, policies, or events that have been directly mentioned, rather than broad topics (such as infrastructure, housing, or development).
-
-                    Extract major topics using Latent Dirichlet Allocation (LDA), Non-Negative Matrix Factorization (NMF), or a transformer-based clustering approach (e.g., BERTopic).
-                    Ensure that both broad **themes** (e.g., Infrastructure, Transportation, Housing) and **specific issues/events** (e.g., "MRT station construction," "Turf City gazetting") are detected.
-                    Use key terms and representative phrases to assist in topic identification.
-
-                    Recognize and extract specific **locations**, **projects**, **policies**, **government decisions**, and **events** that appear in the feedback.
-                    If a specific issue is frequently mentioned (e.g., "MRT station construction," "Turf City"), ensure it is highlighted separately, rather than being absorbed into a broader category.
-
-                    First, extract broad themes (e.g., Infrastructure, Housing, Environmental Concerns).
-                    Then, identify **specific issues/events** within those themes (e.g., "New MRT station at Jurong," "Demolition of Turf City for new housing").
-                    Provide detailed insights by connecting specific mentions to the larger themes they belong to.
-
-                    Return the response as a JSON array of objects with this structure:
-                    [
-                        {
-                        "title": "headline 1",
-                        "match_percent": Feedback Volume (percentage of total summaries),
-                        "desc": "Detailed explanation of the headline",
-                        "entities": ["List of key mentions and named entities"],
-                        "examples": ["Example feedback snippets"],
-                        "category": "Broad theme",
-                        },
-                        ...
-                    ]
-
-                    Return only JSON. Do not include any other text.
-                    `;
-
-                // Make the OpenAI API call
-                const response = await generateText({
-                    model: customModel("gemini-2.5-flash"),
-                    prompt: `${headlinesPrompt}This is the list of feedback summaries:\n${JSON.stringify(feedbackSummaries)}`,
-                });
-
-                // Parse the OpenAI JSON response
-                const rawText = response.text.trim();
-                const cleanedText = rawText.replace(/^```json\n/, "").replace(/\n```$/, "");
-                const parsedData = JSON.parse(cleanedText);
-
-                // Map the JSON data to the correct format
-                return parsedData.map((headline: any) => ({
-                    title: headline.title,
-                    match_percent: headline.match_percent.toString(), // Ensure it's a string
-                    desc: headline.desc,
-                    entities: headline.entities.join(", "), // Convert array to string
-                    examples: headline.examples.join(" | "), // Format examples as a single string
-                    category: headline.category,
-                    date_processed: new Date(), // Add timestamp
-                    type: fromDate ? 'today' : 'overall', // 'today' for specific date, 'overall' for all records
-                    topic: headline.topic || null, // Include topic if available
-                    score: headline.score || null, // Include score if available
-                }));
-            } catch (error) {
-                console.error("Error fetching headlines from OpenAI:", error);
-                return [];
-            }
-        }
-
-        async function fetchEvergreenTopics(): Promise<any[]> {
-            try {
-                console.log("🔄 Starting to process evergreen topics...");
-        
-                const evergreenTrends: any[] = [];
-                const evergreenTopics = [
-                    "Food Information",
-                    "Delivery Orders",
-                    "Promotions",
-                    "Restaurant Information",
-                    "The McDonald's App",
-                    "Gift Certificates",
-                    "Large Orders",
-                    "McDelivery Service",
-                    "Drive-Thru",
-                    "Happy Meal",
-                    "Celebrating Birthdays"
-                ];
-        
-                for (const topic of evergreenTopics) {
-                    const topicRecords = records.filter(record => 
-                        Array.isArray(record.evergreen_topics) && record.evergreen_topics.includes(topic)
-                    );
-                    const feedbackSummaries = topicRecords.map(record => record.summary).filter(summary => summary?.trim() !== "");
-        
-                    if (feedbackSummaries.length === 0) {
-                        console.log(`⚠️ No summaries found for topic: "${topic}". Skipping...`);
-                        continue;
-                    }
-        
-                    console.log(`✅ Processing topic: "${topic}" with ${feedbackSummaries.length} feedback summaries.`);
-        
-                    const evergreenPrompt = `
-                        You are an AI assistant specialized in natural language processing, particularly in topic modeling and text analysis.
-                        You will be given a list of summaries of feedback from the public to analyze, and an evergreen topic that some of these summaries of feedback may fall under.
-                        Your task is to generate **exactly 3 trends or learning takeaways** for the evergreen topic, based on the feedback summaries that fall under this topic.
-        
-                        First, extract core themes, phrases, and words using Latent Dirichlet Allocation (LDA).
-                        Use key terms and representative phrases to assist in topic identification.
-                        Recognize and extract specific **locations, projects, policies, government decisions, and events** that appear in the feedback.
-        
-                        Second, compile only the relevant feedback for the evergreen topic and generate the top 3 trends or takeaways.
-                        For each trend, ensure that you generate:
-                        - A **headline**
-                        - A **detailed description**
-                        - A **sentiment score** (positive/neutral/negative)
-                        - **Example feedback snippets**
-        
-                        **Return JSON in this exact format (as an array of objects):**
-                        [
-                            {
-                                "headline": "Headline of the trend",
-                                "desc": "Detailed description of the trend",
-                                "score": "positive/neutral/negative",
-                                "examples": [
-                                    "Example feedback snippet 1",
-                                    "Example feedback snippet 2",
-                                    "Example feedback snippet 3"
-                                ]
-                            },
-                            {
-                                "headline": "Headline of the second trend",
-                                "desc": "Detailed description of the second trend",
-                                "score": "positive/neutral/negative",
-                                "examples": [
-                                    "Example feedback snippet 1",
-                                    "Example feedback snippet 2",
-                                    "Example feedback snippet 3"
-                                ]
-                            },
-                            {
-                                "headline": "Headline of the third trend",
-                                "desc": "Detailed description of the third trend",
-                                "score": "positive/neutral/negative",
-                                "examples": [
-                                    "Example feedback snippet 1",
-                                    "Example feedback snippet 2",
-                                    "Example feedback snippet 3"
-                                ]
-                            }
-                        ]
-
-                        Only return valid JSON. Do not include any other text.
-
-                        **Evergreen Topic:** "${topic}"
-                        **Feedback Summaries:** ${JSON.stringify(feedbackSummaries)}
-                    `;
-        
-                    const response = await generateText({
-                        model: customModel("gemini-2.5-flash"),
-                        prompt: evergreenPrompt,
-                    });
-        
-                    // Log raw response for debugging
-                    const rawText = response.text.trim();
-
-                    // Clean and parse JSON response
-                    let parsedData: any[] = [];
-                    try {
-                        const cleanedText = rawText.replace(/^```json\n/, "").replace(/\n```$/, ""); // Remove markdown
-                        parsedData = JSON.parse(cleanedText); // Parse JSON
-                        console.log(`✅ Successfully parsed JSON for topic: "${topic}"`);
-                    } catch (error) {
-                        console.error(`❌ Failed to parse JSON for topic: "${topic}":`, error);
-                        continue; // Skip this topic and move on
-                    }
-
-                    // Format and store results
-                    parsedData.forEach((trend: any, index: number) => {
-                        console.log(`🔍 Processing trend #${index + 1} for topic: "${topic}"`);
-                        console.log("📝 Raw trend data:", trend);
-
-                        if (!trend.headline || !trend.desc) {
-                            console.warn(`⚠️ Skipping invalid trend (missing title or description) for topic: "${topic}"`);
-                            return;
-                        }
-
-                        const formattedTrend = {
-                            title: trend.headline,
-                            match_percent: "N/A", // Not applicable for evergreen topics
-                            desc: trend.desc,
-                            entities: "",
-                            examples: trend.examples ? trend.examples.join(" | ") : "No examples",
-                            category: "Evergreen",
-                            date_processed: new Date(),
-                            type: "evergreen",
-                            topic: topic,
-                            score: trend.score,
-                        };
-
-                        console.log("✅ Adding formatted trend:", formattedTrend);
-                        evergreenTrends.push(formattedTrend);
-                    });
-                }
-
-                console.log(`✅ Total evergreen headlines generated: ${evergreenTrends.length}`);
-                return evergreenTrends;
-
-            } catch (error) {
-                console.error("🚨 Error fetching evergreen trends:", error);
-                return [];
-            }
-        }
-
-
-        // Fetch today's headlines (from yesterday onwards) and overall headlines
-        const todayHeadlinesData = await fetchHeadlines(new Date(new Date().setDate(new Date().getDate() - 1)));
-        const overallHeadlinesData = await fetchHeadlines();
-        const evergreenTrendsData = await fetchEvergreenTopics();
-
-        // Combine today's headlines and overall headlines
-        const allHeadlines = [...todayHeadlinesData, ...overallHeadlinesData, ...evergreenTrendsData];
-
-        // Call the saveHeadlines function to save the new headlines
-        const result = await saveHeadlines(allHeadlines);
-
-        // Return success response
-        return new Response(
-            JSON.stringify({ message: "Headlines saved successfully", result }),
-            {
-                status: 201,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-    } catch (error) {
-        console.error('Error saving headlines:', error);
-        return new Response("Error saving headlines", { status: 500 });
+    if (validRecords.length === 0) {
+      return Response.json({ message: 'No records with summaries found', count: 0 }, { status: 200 });
     }
+
+    const summaries = validRecords.map((r) => r.summary as string);
+
+    console.log(`Embedding ${summaries.length} summaries...`);
+    const embeddings = await embedSummaries(summaries);
+
+    console.log('Running DBSCAN clustering...');
+    const labels = runDBSCAN(embeddings, DBSCAN_EPSILON, DBSCAN_MIN_POINTS);
+    const nClusters = new Set(labels.filter((l) => l !== -1)).size;
+    const nNoise = labels.filter((l) => l === -1).length;
+    console.log(`Found ${nClusters} clusters, ${nNoise} noise points`);
+
+    const overallHeadlines = buildHeadlines(validRecords, summaries, labels, 'overall');
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const recentIndices: number[] = [];
+    for (let i = 0; i < validRecords.length; i++) {
+      if (new Date(validRecords[i].creationDate) >= yesterday) {
+        recentIndices.push(i);
+      }
+    }
+
+    let todayHeadlines: any[] = [];
+    if (recentIndices.length >= DBSCAN_MIN_POINTS) {
+      const recentSummaries = recentIndices.map((i) => summaries[i]);
+      const recentEmbeddings = recentIndices.map((i) => embeddings[i]);
+      const recentRecords = recentIndices.map((i) => validRecords[i]);
+      const recentLabels = runDBSCAN(recentEmbeddings, DBSCAN_EPSILON, DBSCAN_MIN_POINTS);
+      todayHeadlines = buildHeadlines(recentRecords, recentSummaries, recentLabels, 'today');
+    }
+
+    const evergreenHeadlines = buildEvergreenHeadlines(validRecords, summaries, embeddings);
+
+    const allHeadlines = [...overallHeadlines, ...todayHeadlines, ...evergreenHeadlines];
+
+    await deleteHeadlines();
+    await saveHeadlines(allHeadlines);
+
+    console.log(`Saved ${allHeadlines.length} headlines`);
+
+    return Response.json(
+      { message: 'Headlines generated via DBSCAN', count: allHeadlines.length },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error('Error generating headlines:', error);
+    const detail = error instanceof Error ? error.message : String(error);
+    return Response.json({ error: 'Failed to generate headlines', detail }, { status: 500 });
+  }
 }

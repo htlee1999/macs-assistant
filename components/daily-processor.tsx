@@ -1,6 +1,6 @@
 'use client'
-import { createContext, useState, useContext, ReactNode } from 'react';
-import { Record, Headline } from "@/lib/db/schema";
+import { createContext, useState, useContext, type ReactNode } from 'react';
+import type { Record, Headline } from "@/lib/db/schema";
 
 interface ProcessorContextType {
     records: Record[];
@@ -87,7 +87,7 @@ export const ProcessorProvider = ({ children }: ProcessorProviderProps) => {
             todayMidnight.setHours(0, 0, 0, 0); // Set the time to 00:00:00.000
             
             // Filter out the headlines that are older than today (before midnight)
-            let oldHeadlines = headlines.filter((headline) => {
+            const oldHeadlines = headlines.filter((headline) => {
               const headlineDate = new Date(headline.date_processed);
               return headlineDate < todayMidnight; // Check if the headline's date is before midnight today
             });

@@ -1,68 +1,125 @@
-# macs-assistant
-The motivation behind this macdonald's FAQ drafter is that sometimes people can send lots of questions and lots of emails, we want to create a drafter that would help you generate appropriate response with relevant data. You can also edit using a Notion-like editor called Novel.
+# MACS Assistant
 
-- For the purpose of deployment only a default base model utilising Gemini flash 2.0 would be utilised when creating a draft.
-- The chunks that are used as relevant context has already been embedded and ingested 
-- For full AI capabilities of the web app you would require your own API keys and you would need to use it either locally or deploy on your own. 
-- As such you would not be able to upload CSV file for 2 reasons
-  1. The CSV file need to be in a specific format
-  2. You need an API key to do embedding of the chunks
-
+A McDonald's FAQ email drafter that helps customer service officers generate contextual email responses using relevant FAQ data and past replies. Features a Notion-like rich text editor, semantic document retrieval via pgVector, and geospatial visualization of customer inquiries.
 
 ## Features
 
-- [Next.js](https://nextjs.org) App Router
-  - Advanced routing for seamless navigation and performance
-  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
-- [AI SDK](https://sdk.vercel.ai/docs)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Supports OpenAI (default), Anthropic, Cohere, and other model providers
-- [shadcn/ui](https://ui.shadcn.com)
-  - Styling with [Tailwind CSS](https://tailwindcss.com)
-  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
-- Data Persistence
-  - [Vercel Postgres powered by Neon](https://vercel.com/storage/postgres) for saving chat history and user data
-  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [NextAuth.js](https://github.com/nextauthjs/next-auth)
-  - Simple and secure authentication
+- **AI Email Drafting** - Generates contextual draft responses using Google Gemini, referencing relevant FAQ chunks and similar past replies
+- **Semantic Search** - pgVector-powered 153-dimensional embeddings for FAQ chunk retrieval with cosine similarity matching
+- **Rich Text Editor** - [Novel](https://github.com/steven-tey/novel)-based Notion-like editor with AI-assisted writing (continue, improve, shorten, lengthen, fix grammar)
+- **Document Sidebar** - Browse related FAQ documents, related emails, and house rules in a collapsible right panel
+- **Headlines & Trends** - AI-generated topic modeling and trend analysis across customer feedback using LDA/NMF approaches
+- **Evergreen Topics** - Tracks recurring themes (Food Information, Delivery Orders, Promotions, etc.) with sentiment analysis
+- **Geospatial View** - H3 hexagonal heatmap visualization of inquiry locations using Leaflet and D3
+- **Record Management** - Full CRUD for customer inquiry records with category, subcategory, outcome tracking, and CSV bulk import
 
-## Model Providers
+## Tech Stack
 
-This template ships with Google's `gemini flash 2.0` as the default. However, with the [AI SDK](https://sdk.vercel.ai/docs), you can switch LLM providers to [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://sdk.vercel.ai/providers/ai-sdk-providers) with just a few lines of code.
+| Layer | Technology |
+|-------|-----------|
+| Framework | [Next.js 16](https://nextjs.org) (App Router, React 19) |
+| AI | [Vercel AI SDK v6](https://sdk.vercel.ai/docs) with Google Gemini Flash 2.5 |
+| Database | PostgreSQL ([Neon](https://neon.tech)) with [pgVector](https://github.com/pgvector/pgvector) |
+| ORM | [Drizzle ORM](https://orm.drizzle.team) |
+| Auth | [NextAuth.js v5](https://authjs.dev) (Credentials provider, bcrypt) |
+| UI | [shadcn/ui](https://ui.shadcn.com) + [Radix UI](https://radix-ui.com) + [Tailwind CSS v4](https://tailwindcss.com) |
+| Editor | [Novel](https://novel.sh) (TipTap + ProseMirror) |
+| Maps | [Leaflet](https://leafletjs.com) + [H3](https://h3geo.org) + [D3](https://d3js.org) |
+| Linting | [Biome](https://biomejs.dev) |
 
+## Project Structure
 
-## Running locally
+```
+app/
+  (auth)/                 # Login, registration, NextAuth config
+  (record)/               # Main app (protected)
+    page.tsx              # Dashboard
+    record/[id]/page.tsx  # Individual record view
+    api/
+      records/            # Record CRUD + summary generation
+      editor/             # Draft save/generate
+      ask-ai/             # AI writing assistant (continue, improve, etc.)
+      document/           # FAQ chunk & related email retrieval
+      headlines/          # Trend analysis
+      summary/            # Batch summary + topic extraction
+      csv-chunks/         # CSV FAQ import
+  (OneMap)/               # Geospatial map view
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+lib/
+  ai/                     # AI provider config, embeddings, house rules
+  db/
+    schema.ts             # Drizzle schema (User, Record, faqChunks, Headlines, Preferences)
+    queries.ts            # Database operations
+    migrations/           # SQL migration files
+  editor/                 # Editor content utilities
 
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various OpenAI and authentication provider accounts.
+components/
+  sidebars/               # Left nav, right documents bar, record shell
+  editor/                 # Novel editor setup
+  generative/             # AI selector UI
+  ui/                     # shadcn/ui primitives
+```
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- [pnpm](https://pnpm.io)
+- PostgreSQL with pgVector extension (or a [Neon](https://neon.tech) database)
+
+### Environment Variables
+
+Create a `.env.local` file:
+
+```env
+# Required
+POSTGRES_URL=postgresql://...
+NEXTAUTH_SECRET=your-secret-here
+GOOGLE_GENERATIVE_AI_API_KEY=your-google-ai-key
+
+# Optional (for rate limiting)
+KV_REST_API_URL=your-upstash-redis-url
+KV_REST_API_TOKEN=your-upstash-redis-token
+```
+
+### Install & Run
 
 ```bash
 pnpm install
-pnpm dev
+pnpm db:migrate    # Run database migrations
+pnpm dev           # Start dev server
 ```
 
-Your app template should now be running on [localhost:8000](http://localhost:8000/).
+The app runs on [localhost:3000](http://localhost:3000/).
+
+### Database Commands
+
+```bash
+pnpm db:generate   # Generate migration files from schema changes
+pnpm db:migrate    # Apply pending migrations
+pnpm db:push       # Push schema directly (dev only)
+pnpm db:studio     # Open Drizzle Studio GUI
+```
+
+## Model Providers
+
+The default provider is Google Gemini Flash 2.5. The AI provider is configured in `lib/ai/index.ts` and uses the [Vercel AI SDK](https://sdk.vercel.ai/docs), so you can swap to [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), or [any supported provider](https://sdk.vercel.ai/providers/ai-sdk-providers) by changing a few lines.
+
+## Limitations
+
+- The deployed version uses Gemini Flash 2.5 as the default model. For full AI capabilities, you need your own API keys.
+- FAQ chunks have been pre-embedded and ingested. Uploading new CSVs requires:
+  1. The CSV in the expected format
+  2. A valid API key for embedding generation
 
 ## Credits
 
-We based our solution off the fantastic work done by Greg over at [Rabbit Hole Syndrome](https://www.youtube.com/@RabbitHoleSyndrome). You can follow his work on Twitter at [@ggrdson](https://twitter.com/ggrdson).
+Based on the work by Greg at [Rabbit Hole Syndrome](https://www.youtube.com/@RabbitHoleSyndrome) ([@ggrdson](https://twitter.com/ggrdson)):
 
-- This prototype was built using Vercel's very robust [Next.js OpenAI Doc Search Template](https://vercel.com/templates/next.js/nextjs-openai-doc-search-starter)
-- Read the blogpost on how he built [ChatGPT for the Supabase Docs](https://supabase.com/blog/chatgpt-supabase-docs).
-- [[Docs] pgvector: Embeddings and vector similarity](https://supabase.com/docs/guides/database/extensions/pgvector)
-- Watch [Greg's](https://twitter.com/ggrdson) "How I built this" [video](https://youtu.be/Yhtjd7yGGGA) on the [Rabbit Hole Syndrome YouTube Channel](https://www.youtube.com/@RabbitHoleSyndrome).
-- The editing function of the app comes from Novel (https://github.com/steven-tey/novel/blob/main/README.md)
+- Built on Vercel's [Next.js OpenAI Doc Search Template](https://vercel.com/templates/next.js/nextjs-openai-doc-search-starter)
+- [ChatGPT for the Supabase Docs](https://supabase.com/blog/chatgpt-supabase-docs) blog post
+- [pgvector: Embeddings and vector similarity](https://supabase.com/docs/guides/database/extensions/pgvector)
+- Editor powered by [Novel](https://github.com/steven-tey/novel)
 
-
-The frontend library used in this Beta is created by [Vercel](https://vercel.com) and [Next.js](https://nextjs.org) team members, with contributions from:
-
-- Jared Palmer ([@jaredpalmer](https://twitter.com/jaredpalmer)) - [Vercel](https://vercel.com)
-- Shu Ding ([@shuding\_](https://twitter.com/shuding_)) - [Vercel](https://vercel.com)
-- shadcn ([@shadcn](https://twitter.com/shadcn)) - [Vercel](https://vercel.com)
-
- 
+Frontend library created by [Vercel](https://vercel.com) and [Next.js](https://nextjs.org) team members including Jared Palmer, Shu Ding, and shadcn.

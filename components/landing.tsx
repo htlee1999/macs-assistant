@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateUUID } from '@/lib/utils';
 import { DraftHeader } from '@/components/editor/draft-header';
-import { Headline } from '@/lib/db/schema'
+import type { Headline } from '@/lib/db/schema'
 import { useProcessorContext } from '@/components/daily-processor';
 import { ProcessorButton } from '@/components/processor-button';
 import * as Tabs from '@radix-ui/react-tabs';
@@ -95,7 +95,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   
           <CardContent>
             {(() => {
-              const highMatchHeadlines = filteredOverall.filter(headline => parseFloat(headline.match_percent) >= 10);
+              const highMatchHeadlines = filteredOverall.filter(headline => Number.parseFloat(headline.match_percent) >= 10);
               const hasHighMatch = highMatchHeadlines.length > 0;
               const alertColor = hasHighMatch ? "bg-red-500" : "bg-green-500";
               const alertMessage = hasHighMatch ? "Possible Write-In Campaign detected" : "No Special Alerts";
@@ -347,7 +347,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
           </CardContent>
         </Card>
       </div>
-      <ProcessorButton></ProcessorButton>
+      <ProcessorButton />
     </div>
   );
 };

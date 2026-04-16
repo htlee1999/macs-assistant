@@ -1,8 +1,12 @@
 // onemap.tsx - Updated to use H3HeatmapLayer correctly
 import React, { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import { MapContainer as MapContainerBase, Marker as MarkerBase, Popup, useMap } from 'react-leaflet';
+
+const MapContainer = MapContainerBase as any;
+const Marker = MarkerBase as any;
+import leaflet from 'leaflet';
+const L = leaflet as any;
 import 'leaflet/dist/leaflet.css';
 import H3HeatmapLayer from './H3HeatmapLayer';
 
@@ -84,7 +88,7 @@ const ThemeTileLayer = ({ theme }: { theme: string | undefined }) => {
   useEffect(() => {
     const tileUrl = getTileUrl(theme);
     // Remove existing tile layers
-    map.eachLayer((layer) => {
+    map.eachLayer((layer: any) => {
       if (layer instanceof L.TileLayer) {
         map.removeLayer(layer);
       }
@@ -201,10 +205,10 @@ const OneMap: React.FC<OneMapProps> = ({
   };
   
   return (
-    <MapContainer 
+    <MapContainer
       center={center}
-      zoom={zoom} 
-      style={{ height }} 
+      zoom={zoom}
+      style={{ height }}
       className="rounded-lg overflow-hidden"
       maxBounds={bounds}
       minZoom={11}
