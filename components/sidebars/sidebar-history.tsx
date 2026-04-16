@@ -76,7 +76,7 @@ const RecordItem = ({ record, outcomeOverrides }: RecordItemProps) => {
                 </span>
               )}
               {outcome === 'Replied' && (
-                <span className="text-xs text-blue-500 bg-blue-100 px-2 py-0.5 rounded-full flex items-center">
+                <span className="text-xs text-primary bg-secondary px-2 py-0.5 rounded-full flex items-center">
                   <MessageCircleIcon className="size-3 mr-1" />
                   Replied
                 </span>
@@ -251,7 +251,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     if (filterType === 'all') return '';
     if (filterType === 'drafts') return 'bg-amber-100 text-amber-500';
     if (filterType === 'vetted') return 'bg-green-100 text-green-600';
-    if (filterType === 'replied') return 'bg-blue-100 text-blue-500';
+    if (filterType === 'replied') return 'bg-secondary text-primary';
     return '';
   };
   
@@ -401,12 +401,12 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
               </button>
               <button
                 onClick={toggleMoreFilters}
-                className={`p-2 rounded-full hover:text-zinc-800 ml-2 relative ${showMoreFilters ? 'bg-blue-100 text-blue-600' : ''}`}
+                className={`p-2 rounded-full hover:text-zinc-800 ml-2 relative ${showMoreFilters ? 'bg-secondary text-primary' : ''}`}
                 title="More Filters"
               >
                 <FilterIcon className="size-4" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
                     {activeFilterCount}
                   </span>
                 )}
@@ -477,7 +477,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
             {isLoading ? (
               <div className="flex items-center justify-center p-4 flex-col">
                 <div className="mb-2">Loading records...</div>
-                <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse" />
+                <div className="w-16 h-1 bg-primary rounded-full animate-pulse" />
               </div>
             ) : filteredByType.length === 0 ? (
               <div className="px-4 py-8 text-sm text-zinc-500 text-center">

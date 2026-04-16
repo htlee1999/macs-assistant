@@ -356,7 +356,7 @@ export function EmailDraftingPage({
                   className="absolute inset-0 flex justify-center items-center"
                 >
                   <div className="flex flex-col items-center space-y-2">
-                    <div className="size-10 border-4 border-gray-300 rounded-full animate-spin border-t-blue-500" />
+                    <div className="size-10 border-4 border-muted rounded-full animate-spin border-t-primary" />
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}

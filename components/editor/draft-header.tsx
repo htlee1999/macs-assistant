@@ -129,22 +129,22 @@ useEffect(() => {
           <MailPlus className="h-5 w-5" />
         </button>
         <button
-          className="order-3 p-1.5 rounded-md border bg-blue-50 hover:bg-blue-100"
+          className="order-3 p-1.5 rounded-md border bg-secondary hover:bg-secondary/80"
           onClick={openCSVModal}
           title="Process CSV Chunks">
-          <FileText className="h-5 w-5 text-blue-600" />
+          <FileText className="h-5 w-5 text-primary" />
         </button>
       </header>
 
       {/* CSV Chunks Modal */}
       {isCSVModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col">
+          <div className="bg-background rounded-lg shadow-xl border max-w-5xl w-full max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-semibold">CSV Chunk Processor</h2>
               <button 
                 onClick={closeCSVModal}
-                className="p-1 rounded-full hover:bg-gray-100"
+                className="p-1 rounded-full hover:bg-muted"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -159,19 +159,19 @@ useEffect(() => {
       {/* New Record Modal */}
       {isNewRecordModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col">
+          <div className="bg-background rounded-lg shadow-xl border w-full max-w-md flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-semibold">Create New Record</h2>
               <button
                 onClick={closeNewRecordModal}
-                className="p-1 rounded-full hover:bg-gray-100"
+                className="p-1 rounded-full hover:bg-muted"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <div className="space-y-2">
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="message" className="block text-sm font-medium text-foreground">
                   Message
                 </label>
                 <textarea
@@ -180,12 +180,12 @@ useEffect(() => {
                   value={newRecord.message}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter message content..."
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="category" className="block text-sm font-medium text-foreground">
                   Category
                 </label>
                 <input
@@ -194,12 +194,12 @@ useEffect(() => {
                   name="category"
                   value={newRecord.category}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter category"
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="location" className="block text-sm font-medium text-foreground">
                   location
                 </label>
                 <Select
@@ -222,25 +222,25 @@ useEffect(() => {
                   components={{
                     IndicatorSeparator: () => null, // Hide the separator
                     DropdownIndicator: () => (
-                      <span className="text-gray-500">
+                      <span className="text-muted-foreground">
                         <X className="h-5 w-5" />
                       </span>
                     ),
                   }}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
             <div className="p-4 border-t flex justify-end space-x-3">
               <button
                 onClick={closeNewRecordModal}
-                className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50"
+                className="px-4 py-2 rounded-md border border-input hover:bg-muted"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitNewRecord}
-                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 disabled={!newRecord.message || isSubmitting}
               >
                 {isSubmitting ? 'Creating...' : 'Create Record'}

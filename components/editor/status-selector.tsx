@@ -195,7 +195,7 @@ export function StatusSelector({
       <div className="flex items-center">
         <Button 
           variant="outline"
-          className="border flex items-center gap-1 md:px-2 md:h-fit text-blue-500 border-blue-500 bg-blue-100"
+          className="border flex items-center gap-1 md:px-2 md:h-fit text-primary border-primary bg-secondary"
           disabled={true}
         >
           Replied

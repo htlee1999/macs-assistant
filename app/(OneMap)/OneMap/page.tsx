@@ -42,7 +42,7 @@ const OneMap = nextDynamic<OneMapProps>(() => import('@/components/onemap'), {
   ssr: false,
   loading: () => (
     <div className="flex h-[800px] items-center justify-center bg-gray-100">
-      <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent" />
+      <div className="animate-spin h-10 w-10 border-4 border-primary rounded-full border-t-transparent" />
     </div>
   )
 });

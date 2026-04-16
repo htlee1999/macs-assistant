@@ -132,24 +132,24 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   
             {/* Tab Navigation for Headlines */}
             <Tabs.Root defaultValue="today" className="w-full">
-            <Tabs.List className="flex justify-around bg-gray-100 p-2 mt-4 rounded-lg shadow-md">
+            <Tabs.List className="flex justify-around bg-muted p-1.5 mt-4 rounded-lg">
               <Tabs.Trigger
                 value="today"
-                className="px-6 py-2 font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:text-black data-[state=inactive]:bg-grey-600 data-[state=inactive]:text-black hover:bg-grey-500 hover:text-white"
+                className="px-5 py-2 text-sm font-medium rounded-md transition-all text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:text-foreground"
               >
                 Today&apos;s Headlines
               </Tabs.Trigger>
 
               <Tabs.Trigger
                 value="overall"
-                className="px-6 py-2 font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:text-black data-[state=inactive]:bg-grey-600 data-[state=inactive]:text-black hover:bg-grey-500 hover:text-white"
+                className="px-5 py-2 text-sm font-medium rounded-md transition-all text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:text-foreground"
               >
                 Overall Headlines
               </Tabs.Trigger>
 
               <Tabs.Trigger
                 value="evergreen"
-                className="px-6 py-2 font-medium rounded-md transition-all data-[state=active]:bg-white data-[state=active]:text-black data-[state=inactive]:bg-grey-600 data-[state=inactive]:text-black hover:bg-grey-500 hover:text-white"
+                className="px-5 py-2 text-sm font-medium rounded-md transition-all text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm hover:text-foreground"
               >
                 Evergreen Topics
               </Tabs.Trigger>
@@ -194,7 +194,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                       </div>
                     ))
                   ) : (
-                    <div className="p-6 mt-4 bg-gray-100 text-gray-500 text-center rounded-md shadow-sm">No Headlines for Today</div>
+                    <div className="p-6 mt-4 bg-muted text-muted-foreground text-center rounded-md">No Headlines for Today</div>
                   )}
                 </div>
               </Tabs.Content>
@@ -205,7 +205,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
               <Tabs.Content value="overall">
                   
                 {/* Date Range Selector and Confirm Button */}
-                <div className="flex gap-6 p-4 mt-4 bg-gray-50 rounded-md shadow-sm">
+                <div className="flex gap-6 p-4 mt-4 bg-muted/50 rounded-md">
                   <div className="flex flex-col flex-1">
                     <label htmlFor="startDate" className="mb-2 text-sm">Start Date</label>
                     <input id="startDate" type="date" value={startDate} onChange={(e) => handleDateChange(e, 'start')} className="px-4 py-2 border rounded-md text-xs" />
@@ -215,7 +215,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                     <input id="endDate" type="date" value={endDate} onChange={(e) => handleDateChange(e, 'end')} className="px-4 py-2 border rounded-md text-xs" />
                   </div>
                   <div className="flex flex-col flex-1 justify-end">
-                    <button className="py-2 px-6 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700">Confirm</button>
+                    <button className="py-2 px-6 bg-primary text-primary-foreground rounded-md shadow-sm hover:bg-primary/90">Confirm</button>
                   </div>
                 </div>
                 
@@ -257,7 +257,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                       </div>
                     ))
                   ) : (
-                    <div className="p-6 mt-4 bg-gray-100 text-gray-500 text-center rounded-md shadow-sm">Overall Headlines Unavailable</div>
+                    <div className="p-6 mt-4 bg-muted text-muted-foreground text-center rounded-md">Overall Headlines Unavailable</div>
                   )}
                 </div>
               </Tabs.Content>
@@ -268,7 +268,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
               <Tabs.Content value="evergreen">
 
                 {/* Date Range Selector and Confirm Button */}
-                <div className="flex gap-6 p-4 mt-4 bg-gray-50 rounded-md shadow-sm">
+                <div className="flex gap-6 p-4 mt-4 bg-muted/50 rounded-md">
                   <div className="flex flex-col flex-1">
                     <label htmlFor="startDate" className="mb-2 text-sm">Start Date</label>
                     <input id="startDate" type="date" value={startDate} onChange={(e) => handleDateChange(e, 'start')} className="px-4 py-2 border rounded-md text-xs" />
@@ -278,7 +278,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                     <input id="endDate" type="date" value={endDate} onChange={(e) => handleDateChange(e, 'end')} className="px-4 py-2 border rounded-md text-xs" />
                   </div>
                   <div className="flex flex-col flex-1 justify-end">
-                    <button className="py-2 px-6 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700">Confirm</button>
+                    <button className="py-2 px-6 bg-primary text-primary-foreground rounded-md shadow-sm hover:bg-primary/90">Confirm</button>
                   </div>
                 </div>
 
@@ -289,7 +289,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                       <div key={topic} className="border-t border-muted mt-4">
                         {/* Evergreen Topic */}
                         <button
-                          className="w-full text-left py-3 px-4 text-lg font-bold bg-gray-100 hover:bg-gray-200 rounded-md transition"
+                          className="w-full text-left py-3 px-4 text-lg font-semibold bg-muted hover:bg-muted/80 rounded-md transition"
                           onClick={() => toggleExpandTopic(topic)}
                         >
                           {topic}
@@ -299,13 +299,13 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                           <div className="px-4">
                             {Array.isArray(topicHeadlines) &&
                               topicHeadlines.map((headline) => (
-                                <div key={headline.id} className="border-l-4 border-blue-500 pl-4 mt-2">
+                                <div key={headline.id} className="border-l-4 border-primary pl-4 mt-2">
                                   {/* Headline */}
                                   <h2><strong>
                                     {headline.title}
                                   </strong></h2>
 
-                                    <div className="px-4 py-2 text-sm bg-gray-50 border rounded-md">
+                                    <div className="px-4 py-2 text-sm bg-muted/50 border rounded-md">
                                       <p><strong>Description:</strong> {headline.desc}</p>
 
                                       {/* Sentiment Score */}
@@ -337,7 +337,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                       </div>
                     ))
                   ) : (
-                    <div className="p-6 mt-4 bg-gray-100 text-gray-500 text-center rounded-md shadow-sm">
+                    <div className="p-6 mt-4 bg-muted text-muted-foreground text-center rounded-md">
                       No Evergreen Topics Available
                     </div>
                   )}

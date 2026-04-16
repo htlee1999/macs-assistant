@@ -87,7 +87,7 @@ const DocumentView: React.FC<DocumentViewProps> = ({ isOpen, onClose, documentDa
           {hasDraft && (
             <div className="mt-6">
               <h3 className="text-md font-medium mb-2">Draft Response</h3>
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+              <div className="p-3 bg-secondary dark:bg-secondary rounded border border-border">
                 {typeof documentData.draft === 'string' ? (
                   <div className="whitespace-pre-wrap text-sm">{documentData.draft}</div>
                 ) : (
@@ -104,21 +104,21 @@ const DocumentView: React.FC<DocumentViewProps> = ({ isOpen, onClose, documentDa
             <div className="mt-6">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-md font-medium">
-                  <div className="flex items-center text-blue-600">
+                  <div className="flex items-center text-primary">
                     <MessageSquare size={16} className="mr-2" />
                     Sent Reply
                   </div>
                 </h3>
                 <button 
                   onClick={toggleReplySection}
-                  className="text-xs text-blue-600 hover:text-blue-800"
+                  className="text-xs text-primary hover:text-primary/80"
                 >
                   {isReplyExpanded ? 'Hide' : 'Show'}
                 </button>
               </div>
               
               {isReplyExpanded && (
-                <div className="whitespace-pre-wrap text-sm bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md border border-blue-100 dark:border-blue-900 shadow-sm">
+                <div className="whitespace-pre-wrap text-sm bg-secondary dark:bg-secondary p-4 rounded-md border border-border shadow-sm">
                   {documentData.reply}
                 </div>
               )}

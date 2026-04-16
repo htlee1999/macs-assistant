@@ -308,7 +308,7 @@ const EmailPreview = ({
                         </p>
                         
                         {contentOverflows && (
-                          <div className={`${screenSize === 'base' ? 'text-xs' : 'text-sm'} text-blue-500 mt-1`}>
+                          <div className={`${screenSize === 'base' ? 'text-xs' : 'text-sm'} text-primary mt-1`}>
                             {isContentExpanded ? 'Show less' : 'Show more'}
                           </div>
                         )}
@@ -327,7 +327,7 @@ const EmailPreview = ({
                         </p>
                         
                         {contentOverflows && (
-                          <div className={`${screenSize === 'base' ? 'text-xs' : 'text-sm'} text-blue-500 mt-1`}>
+                          <div className={`${screenSize === 'base' ? 'text-xs' : 'text-sm'} text-primary mt-1`}>
                             {isContentExpanded ? 'Show less' : 'Show more'}
                           </div>
                         )}
@@ -341,14 +341,14 @@ const EmailPreview = ({
                 <CardFooter className="px-6 pt-2 pb-6 flex-shrink-0 border-t">
                   <div className="w-full">
                     <div className="flex items-center mb-2">
-                      <div className={`flex items-center ${screenSize === 'base' ? 'text-sm' : getTextSize()} font-semibold text-blue-600`}>
+                      <div className={`flex items-center ${screenSize === 'base' ? 'text-sm' : getTextSize()} font-semibold text-primary`}>
                         <MessageSquare className={`mr-2 ${getIconSize()}`} />
                         Your response
                       </div>
                     </div>
                     
                     <div className={`max-h-48 ${screenSize === 'md' ? 'max-h-64' : screenSize === 'lg' ? 'max-h-80' : screenSize === 'xl' || screenSize === '2xl' ? 'max-h-96' : ''} overflow-y-auto`}>
-                      <div className={`whitespace-pre-wrap ${getTextSize()} p-4 rounded-md bg-blue-50 dark:bg-blue-950/30 shadow-sm`}>
+                      <div className={`whitespace-pre-wrap ${getTextSize()} p-4 rounded-md bg-secondary dark:bg-secondary shadow-sm`}>
                         {record.reply}
                       </div>
                     </div>

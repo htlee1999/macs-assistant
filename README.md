@@ -2,6 +2,7 @@
 
 A McDonald's FAQ email drafter that helps customer service officers generate contextual email responses using relevant FAQ data and past replies. Features a Notion-like rich text editor, semantic document retrieval via pgVector, and geospatial visualization of customer inquiries.
 
+
 ## Features
 
 - **AI Email Drafting** - Generates contextual draft responses using Google Gemini, referencing relevant FAQ chunks and similar past replies

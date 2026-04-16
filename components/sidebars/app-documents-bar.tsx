@@ -55,7 +55,7 @@ const EmailItem = ({ email, onSelect }: { email: RelatedEmail, onSelect: (email:
       </div>
       <p className="text-sm text-gray-700">{messagePreview}</p>
       <div className="flex mt-1">
-        {email.draft && <span className="text-xs mr-2 bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Has draft</span>}
+        {email.draft && <span className="text-xs mr-2 bg-secondary text-primary px-2 py-0.5 rounded">Has draft</span>}
         {email.reply && <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Has reply</span>}
       </div>
     </li>
@@ -230,7 +230,7 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
             isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <p className="text-sm text-muted-foreground mb-2">Loading references...</p>
-                  <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse" />
+                  <div className="w-16 h-1 bg-primary rounded-full animate-pulse" />
                 </div>
               ) : error ? (
                 <div className="flex items-center justify-center h-full">
@@ -251,7 +251,7 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center grow">
                   <p className="text-sm text-muted-foreground mb-2">Loading related emails...</p>
-                  <div className="w-16 h-1 bg-blue-500 rounded-full animate-pulse" />
+                  <div className="w-16 h-1 bg-primary rounded-full animate-pulse" />
                 </div>
               ) : error ? (
                 <div className="flex items-center justify-center grow">
@@ -290,7 +290,7 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
                   }
                   setIsEditing(!isEditing); // Toggle the editing mode
                 }}
-                className="mt-2 p-2 rounded-md bg-blue-500 text-white border border-blue-500 hover:border-blue-600"
+                className="mt-2 p-2 rounded-md bg-primary text-primary-foreground border border-primary hover:bg-primary/90"
               >
                 {isEditing ? 'Save Changes' : 'Edit'}
               </button>

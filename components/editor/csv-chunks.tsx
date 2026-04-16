@@ -276,7 +276,7 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
         <div className="mb-6">
           <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
             <div 
-              className="bg-blue-600 h-4 rounded-full transition-all"
+              className="bg-primary h-4 rounded-full transition-all"
               style={{ width: `${Math.min((processedRows / totalRows) * 100, 100)}%` }}
             />
           </div>
@@ -303,7 +303,7 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
           <h3 className="text-lg font-semibold mb-2">Categories Found:</h3>
           <div className="flex flex-wrap gap-2">
             {[...allCategories].map((category, index) => (
-              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+              <span key={index} className="bg-secondary text-primary px-2 py-1 rounded-full text-sm">
                 {category}
               </span>
             ))}
@@ -327,7 +327,7 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
       {results.length > 0 && (
         <div className="mt-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Processed Batches</h2>
+            <h2 className="text-lg font-semibold text-foreground">Processed Batches</h2>
             
             <button 
               onClick={processAllBatches}
@@ -341,19 +341,19 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
           </div>
           
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
+            <table className="min-w-full bg-background border border-border">
               <thead>
                 <tr>
-                  <th className="py-2 px-4 bg-gray-100 border-b">Batch #</th>
-                  <th className="py-2 px-4 bg-gray-100 border-b">Items</th>
-                  <th className="py-2 px-4 bg-gray-100 border-b">ID Range</th>
-                  <th className="py-2 px-4 bg-gray-100 border-b">Status</th>
-                  <th className="py-2 px-4 bg-gray-100 border-b">Actions</th>
+                  <th className="py-2 px-4 bg-muted border-b">Batch #</th>
+                  <th className="py-2 px-4 bg-muted border-b">Items</th>
+                  <th className="py-2 px-4 bg-muted border-b">ID Range</th>
+                  <th className="py-2 px-4 bg-muted border-b">Status</th>
+                  <th className="py-2 px-4 bg-muted border-b">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {results.map((batch, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                  <tr key={index} className={index % 2 === 0 ? 'bg-muted/50' : 'bg-background'}>
                     <td className="py-2 px-4 border-b">{batch.chunkNumber}</td>
                     <td className="py-2 px-4 border-b">{batch.rowCount}</td>
                     <td className="py-2 px-4 border-b">
@@ -363,7 +363,7 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
                       {processedBatches.has(batch.chunkNumber) ? (
                         <span className="text-green-600 font-medium">Processed</span>
                       ) : batchProcessing.has(batch.chunkNumber) ? (
-                        <span className="text-blue-600 font-medium">Processing...</span>
+                        <span className="text-primary font-medium">Processing...</span>
                       ) : (
                         <span className="text-gray-500">Pending</span>
                       )}
@@ -371,7 +371,7 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
                     <td className="py-2 px-4 border-b">
                       <button 
                         onClick={() => sendBatchToAPI(batch.items, batch.chunkNumber)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                        className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90 disabled:opacity-50"
                         disabled={batchProcessing.has(batch.chunkNumber) || processedBatches.has(batch.chunkNumber)}
                       >
                         {processedBatches.has(batch.chunkNumber) ? 
@@ -393,7 +393,7 @@ const sendBatchToAPI = async (batch: FAQItem[], batchNumber: number) => {
               <h3 className="text-lg font-semibold mb-3">Preview of Batch #{results[0].chunkNumber}</h3>
               <div className="space-y-4">
                 {results[0].items.slice(0, 3).map((item, idx) => (
-                  <div key={idx} className="border-l-4 border-blue-500 pl-4 py-2 bg-white rounded shadow-sm">
+                  <div key={idx} className="border-l-4 border-primary pl-4 py-2 bg-white rounded shadow-sm">
                     <div className="text-xs text-gray-500">ID: {item.id} | Category: {item.category || 'None'} | Section: {item.section || 'None'}</div>
                     <div className="font-medium text-lg">{item.heading}</div>
                     <div className="mt-1 text-gray-700">{item.content}</div>

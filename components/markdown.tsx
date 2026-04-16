@@ -57,7 +57,7 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
       return (
         // @ts-expect-error
         <Link
-          className="text-blue-500 hover:underline"
+          className="text-primary hover:underline"
           target="_blank"
           rel="noreferrer"
           {...props}
