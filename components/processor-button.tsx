@@ -10,6 +10,7 @@ import {
   DialogFooter 
 } from './ui/dialog'; 
 import { Button } from './ui/button';
+import { RefreshCw } from 'lucide-react';
 
 export const ProcessorButton = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -30,11 +31,16 @@ export const ProcessorButton = () => {
 
   return (
     <>
-      <Button 
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
         onClick={handleProcessorClick}
         disabled={isProcessing}
+        className="h-8 gap-1.5 text-xs font-medium"
       >
-        {isProcessing ? 'Processing...' : 'Run Daily Processor'}
+        <RefreshCw className={`w-3.5 h-3.5 ${isProcessing ? 'animate-spin' : ''}`} />
+        {isProcessing ? 'Processing…' : 'Run Daily Processor'}
       </Button>
 
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>

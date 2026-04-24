@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useState, useContext, type ReactNode } from 'react';
+import { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
 import type { Record, Headline } from "@/lib/db/schema";
 
 interface ProcessorContextType {
@@ -177,8 +177,12 @@ export const ProcessorProvider = ({ children }: ProcessorProviderProps) => {
         }
     };
 
+    useEffect(() => {
+        fetchHeadlines();
+    }, []);
+
     return (
-        <ProcessorContext.Provider value={{ 
+        <ProcessorContext.Provider value={{
             records, 
             headlines, 
             fetchRecords, 

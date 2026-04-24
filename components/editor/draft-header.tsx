@@ -47,6 +47,20 @@ useEffect(() => {
   fetchOutlets();
 }, []);
 
+useEffect(() => {
+  const handler = () => setIsNewRecordModalOpen(true);
+  window.addEventListener('open-new-record', handler);
+
+  if (typeof window !== 'undefined' && window.location.search.includes('new=1')) {
+    setIsNewRecordModalOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('new');
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  return () => window.removeEventListener('open-new-record', handler);
+}, []);
+
   const closeNewRecordModal = () => {
     setIsNewRecordModalOpen(false);
     setNewRecord({ message: '', category: '', location: '' });
@@ -57,15 +71,11 @@ useEffect(() => {
     setNewRecord(prev => ({ ...prev, [name]: value }));
   };
 
-  // Combined function to open the modal and handle submission
+  const openNewRecordModal = () => {
+    setIsNewRecordModalOpen(true);
+  };
+
   const handleSubmitNewRecord = async () => {
-    // If the modal isn't open yet, just open it
-    if (!isNewRecordModalOpen) {
-      setIsNewRecordModalOpen(true);
-      return;
-    }
-    
-    // Otherwise, submit the form if there's a message
     if (!newRecord.message) return;
     
     setIsSubmitting(true);
@@ -124,14 +134,18 @@ useEffect(() => {
           className="order-1 md:order-2"
         />
         <button
+          type="button"
           className="order-2 md:order-1 p-1.5 rounded-md border"
-          onClick={handleSubmitNewRecord}>
+          onClick={openNewRecordModal}
+          aria-label="Create new record">
           <MailPlus className="h-5 w-5" />
         </button>
         <button
+          type="button"
           className="order-3 p-1.5 rounded-md border bg-secondary hover:bg-secondary/80"
           onClick={openCSVModal}
-          title="Process CSV Chunks">
+          title="Process CSV Chunks"
+          aria-label="Process CSV Chunks">
           <FileText className="h-5 w-5 text-primary" />
         </button>
       </header>
@@ -142,9 +156,11 @@ useEffect(() => {
           <div className="bg-background rounded-lg shadow-xl border max-w-5xl w-full max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-semibold">CSV Chunk Processor</h2>
-              <button 
+              <button
+                type="button"
                 onClick={closeCSVModal}
                 className="p-1 rounded-full hover:bg-muted"
+                aria-label="Close CSV processor"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -163,8 +179,10 @@ useEffect(() => {
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-semibold">Create New Record</h2>
               <button
+                type="button"
                 onClick={closeNewRecordModal}
                 className="p-1 rounded-full hover:bg-muted"
+                aria-label="Close create record"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -233,12 +251,14 @@ useEffect(() => {
             </div>
             <div className="p-4 border-t flex justify-end space-x-3">
               <button
+                type="button"
                 onClick={closeNewRecordModal}
                 className="px-4 py-2 rounded-md border border-input hover:bg-muted"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSubmitNewRecord}
                 className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 disabled={!newRecord.message || isSubmitting}

@@ -15,8 +15,7 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
-    "db:up": "drizzle-kit up",
-    "db:reembed": "npx tsx scripts/reembed-faq-chunks.ts"
+    "db:up": "drizzle-kit up"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.20",

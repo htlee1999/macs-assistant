@@ -12,7 +12,7 @@ import '@/app/globals.css';
 const recordsFetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
-  const tempId = generateUUID();
+  const [tempId] = useState(() => generateUUID());
 
   const [loading, setLoading] = useState<boolean>(true);
   const [filteredToday, setFilteredToday] = useState<Headline[]>([]);
@@ -161,13 +161,14 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
       <div className="flex flex-1 flex-col items-center justify-start overflow-y-auto py-7 px-8 bg-background">
         <div className="w-full max-w-5xl">
           {/* Header */}
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-xl font-bold tracking-tight mb-0.5">Dashboard</h1>
               <p className="text-xs text-muted-foreground">
                 {new Date().toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
+            <ProcessorButton />
           </div>
 
           {/* Metric Cards */}
@@ -277,7 +278,6 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
           </div>
         </div>
       </div>
-      <ProcessorButton />
     </div>
   );
 };

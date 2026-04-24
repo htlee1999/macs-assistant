@@ -250,13 +250,20 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
           </div>
 
           {/* New Record button */}
-          <Link
-            href="/"
+          <button
+            type="button"
+            onClick={() => {
+              if (window.location.pathname === '/') {
+                window.dispatchEvent(new Event('open-new-record'));
+              } else {
+                window.location.href = '/?new=1';
+              }
+            }}
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Record
-          </Link>
+          </button>
         </div>
 
         {/* Record list */}
