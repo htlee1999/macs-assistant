@@ -146,13 +146,13 @@ export default function OneMapPage() {
   const getColors = () => {
     if (theme === 'dark') {
       return {
-        fillColor: '#4299e1',     // Lighter blue for dark mode
-        strokeColor: '#2b6cb0'    // Medium blue stroke for dark mode
+        fillColor: '#d4a24e',
+        strokeColor: '#b8862e'
       };
     } else {
       return {
-        fillColor: '#3182bd',     // Medium blue for light mode
-        strokeColor: '#1e3a8a'    // Darker blue stroke for light mode
+        fillColor: '#c88f2e',
+        strokeColor: '#9a6e1f'
       };
     }
   };
@@ -163,7 +163,7 @@ export default function OneMapPage() {
     <div className="max-w-7xl mx-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">McDonald's Singapore Outlets</h1>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-muted-foreground">
           {theme === 'dark' ? 'Night Mode' : 'Day Mode'}
         </div>
       </div>
@@ -196,7 +196,7 @@ export default function OneMapPage() {
       )}
       
       {!error && (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-muted-foreground">
           <p>
             Displaying {locations.length} McDonald's locations across Singapore in {theme === 'dark' ? 'night' : 'day'} mode.
             {useRandomCoords && " Using simulated coordinates due to data issues."}

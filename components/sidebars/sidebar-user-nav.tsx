@@ -5,7 +5,7 @@ import Image from 'next/image';
 import type { User } from 'next-auth';
 import { signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 
 import {
   DropdownMenu,
@@ -22,27 +22,35 @@ import {
 
 export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, theme } = useTheme();
-  const router = useRouter(); // Initialize router for navigation
+  const router = useRouter();
 
-  const handlePreferencesClick = () => {
-    router.push('/OneMap'); // Navigate to preferences page
-  };
+  const displayName = user.name || user.email?.split('@')[0] || 'User';
+  const displayEmail = user.email || '';
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10">
-              <Image
-                src={`https://avatar.vercel.sh/${user.email}`}
-                alt={user.email ?? 'User Avatar'}
-                width={24}
-                height={24}
-                className="rounded-full"
-              />
-              <span className="truncate">{user?.email}</span>
-              <ChevronUp className="ml-auto" />
+            <SidebarMenuButton className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground h-auto py-2.5">
+              <div className="flex items-center gap-3 w-full min-w-0">
+                <Image
+                  src={`https://avatar.vercel.sh/${user.email}`}
+                  alt={user.email ?? 'User Avatar'}
+                  width={32}
+                  height={32}
+                  className="rounded-full shrink-0"
+                />
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[13px] font-semibold text-foreground truncate">
+                    {displayName}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground truncate">
+                    {displayEmail}
+                  </span>
+                </div>
+                <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </div>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -57,7 +65,7 @@ export function SidebarUserNav({ user }: { user: User }) {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={handlePreferencesClick} // Trigger the navigation to the Preferences page
+              onClick={() => router.push('/OneMap')}
             >
               OneMap
             </DropdownMenuItem>
@@ -67,9 +75,7 @@ export function SidebarUserNav({ user }: { user: User }) {
                 type="button"
                 className="w-full cursor-pointer"
                 onClick={() => {
-                  signOut({
-                    redirectTo: '/',
-                  });
+                  signOut({ redirectTo: '/' });
                 }}
               >
                 Sign out

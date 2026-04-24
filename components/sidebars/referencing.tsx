@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, BrainCircuit } from 'lucide-react';
+import { BrainCircuit, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface RelevantChunk {
   content: string;
@@ -13,190 +13,117 @@ interface ReferencingProps {
   onSelect: (chunk: { content: string; heading: string }) => void;
 }
 
-const TruncatedHeading: React.FC<{ heading: string }> = ({ heading }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const words = heading.split(' ');
-  const isLong = words.length > 8;
-
-  if (!isLong) {
-    return <span>{heading}</span>;
-  }
-
-  return (
-    <span
-      className="cursor-pointer hover:text-foreground/80"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      {isExpanded ? (
-        heading
-      ) : (
-        <>
-          {words.slice(0, 8).join(' ')}
-          <span className="ml-1 text-xs text-muted-foreground">[...]</span>
-        </>
-      )}
-    </span>
+const parseTitle = (content: string): string => {
+  let title = content.replace(/^##\s*/, '');
+  title = title.split(/link:/i)[0].trim();
+  const parts = title.split(':').map(part => part.trim());
+  const cleanParts = parts.filter(part =>
+    part && part.toLowerCase() !== 'tle'
   );
+  const full = cleanParts
+    .join(': ')
+    .split(/[\s-]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  const words = full.split(' ');
+  if (words.length > 8) {
+    return `${words.slice(0, 8).join(' ')}...`;
+  }
+  return full;
+};
+
+const parseContent = (content: string): string => {
+  return content
+    .split('\n')
+    .filter(part =>
+      !part.startsWith('##') &&
+      !part.includes('link:') &&
+      !part.includes('date:') &&
+      part.trim()
+    )
+    .join('\n')
+    .trim();
 };
 
 const Referencing: React.FC<ReferencingProps> = ({ matches, reasoning, onSelect }) => {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
 
-
-  if (!matches) {
+  if (!matches || !matches.length) {
     return (
       <div className="flex items-center justify-center h-full p-4">
-        <p className="text-sm text-muted-foreground">No references found</p>
+        <p className="text-xs text-muted-foreground">No relevant references found</p>
       </div>
     );
   }
-
-  // Filter chunks with similarity > 0.8
-  const highSimilarityChunks = matches;
-
-
-  if (!highSimilarityChunks.length) {
-    return (
-      <div className="flex items-center justify-center h-full p-4">
-        <p className="text-sm text-muted-foreground">No highly relevant references found</p>
-      </div>
-    );
-  }
-
-  const extractUrl = (heading: string): string | null => {
-    const urlMatch = heading.match(/link: (https:\/\/[^\s]+)/);
-    return urlMatch ? urlMatch[1] : null;
-  };
-
-  const extractDate = (heading: string): string | null => {
-    const dateMatch = heading.match(/date: ([^\n]+)/);
-    return dateMatch ? dateMatch[1] : null;
-  };
-
-  const parseTitle = (content: string): string => {
-    let title = content.replace(/^##\s*/, '');
-    title = title.split(/link:/i)[0].trim();
-    const parts = title.split(':').map(part => part.trim());
-    const cleanParts = parts.filter(part =>
-      part &&
-      part.toLowerCase() !== 'tle'
-    );
-    return cleanParts
-      .join(': ')
-      .split(/[\s-]+/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
-
-  const parseContent = (content: string): string => {
-    const contentParts = content.split('\n');
-    const relevantContent = contentParts
-      .filter(part =>
-        !part.startsWith('##') &&
-        !part.includes('link:') &&
-        !part.includes('date:') &&
-        part.trim()
-      )
-      .join('\n')
-      .trim();
-
-    return relevantContent;
-  };
 
   return (
-    <div className="flex flex-col space-y-4 p-4">
-      {/* View Reasoning Card placed at the top */}
-      <div
-        className="bg-background rounded-lg p-4 border border-border 
-                  shadow-sm transition-all duration-200 hover:shadow-md
-                  cursor-pointer hover:bg-accent/5"
-        onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BrainCircuit className="size-5 text-primary" />
-            <h3 className="font-medium text-base text-foreground">View AI Reasoning</h3>
+    <div className="flex flex-col p-4 space-y-3">
+      {/* Subtitle */}
+      <p className="text-[11px] text-muted-foreground">
+        Retrieved via semantic similarity &middot; sorted by relevance
+      </p>
+
+      {/* AI Reasoning toggle */}
+      {reasoning && (
+        <button
+          type="button"
+          onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
+          className="w-full text-left bg-card border border-border rounded-xl p-4 hover:shadow-sm transition-all"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="w-4 h-4 text-primary" />
+              <span className="text-[13px] font-semibold text-foreground">AI Reasoning</span>
+            </div>
+            {isReasoningExpanded
+              ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+              : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+            }
           </div>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="ml-1"
-            >
-              <path d={isReasoningExpanded ? "m18 15-6-6-6 6" : "m6 9 6 6 6-6"} />
-            </svg>
-          </div>
-        </div>
-        
-        {isReasoningExpanded && (
-          <div className="mt-3 text-sm text-foreground/90">
-            <p className="mb-2">
+          {isReasoningExpanded && (
+            <p className="mt-3 text-[12.5px] text-muted-foreground leading-relaxed">
               {reasoning}
             </p>
-          </div>
-        )}
-      </div>
-      
-      {/* Document chunks below */}
-      {highSimilarityChunks.map((chunk, index) => {
-        const url = extractUrl(chunk.heading);
-        const date = extractDate(chunk.heading);
+          )}
+        </button>
+      )}
+
+      {/* Reference cards */}
+      {matches.map((chunk, index) => {
         const title = parseTitle(chunk.content);
         const cleanContent = parseContent(chunk.content);
+        const similarityPercent = Math.round(chunk.similarity * 100);
 
         return (
-          <div
+          <button
             key={index}
-            className="bg-background rounded-lg p-4 border border-border shadow-sm transition-all duration-200 hover:shadow-md"
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            type="button"
+            onClick={() => onSelect(chunk)}
+            className="w-full text-left bg-card border border-border rounded-xl p-4 hover:shadow-sm transition-all"
           >
-            <h3 className="font-medium text-base mb-1 text-foreground">
-              <TruncatedHeading heading={title} />
-            </h3>
+            {/* Title + similarity badge */}
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <h4 className="text-[13px] font-semibold text-foreground leading-snug flex-1">
+                {title}
+              </h4>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[hsl(var(--teal-bg))] text-[hsl(var(--teal-foreground))] border border-[hsl(var(--teal-border))] shrink-0">
+                {similarityPercent}%
+              </span>
+            </div>
 
-            {date && (
-              <p className="text-sm text-foreground/70 mb-1">
-                {date}
-              </p>
-            )}
+            {/* Similarity bar */}
+            <div className="w-full h-[3px] bg-border rounded-full mb-3 overflow-hidden">
+              <div
+                className="h-full bg-[hsl(var(--teal))] rounded-full transition-all"
+                style={{ width: `${similarityPercent}%` }}
+              />
+            </div>
 
-            {url && (
-              <p className="text-xs text-foreground/70 mb-2 break-words">
-                {url}
-              </p>
-            )}
-
-            <p className="text-sm text-foreground line-clamp-2 mb-3">
+            {/* Content preview */}
+            <p className="text-[12.5px] text-muted-foreground leading-relaxed line-clamp-2">
               {cleanContent}
             </p>
-
-            <button
-              onClick={() => onSelect(chunk)}
-              className="
-                flex items-center gap-2 px-3 py-1.5 rounded-md
-                text-sm font-medium transition-all duration-200
-                bg-primary/10 hover:bg-primary/20
-                text-primary-foreground
-                border border-primary/30 hover:border-primary/50
-                shadow-sm hover:shadow-md
-                focus:outline-none focus:ring-2 focus:ring-primary/30
-                dark:bg-primary/20 dark:hover:bg-primary/30
-                dark:border-primary/40 dark:hover:border-primary/60
-              "
-            >
-              <ExternalLink className="size-4 text-foreground" />
-                              <span className="text-foreground">View document</span>
-            </button>
-          </div>
+          </button>
         );
       })}
     </div>

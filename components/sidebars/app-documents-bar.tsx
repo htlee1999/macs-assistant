@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/documents-bar';
 import Referencing from './referencing';
 import DocumentView from './view-docs';
-import { DocumentsIcon, EmailsIcon, CrossIcon, BookOpenIcon } from '@/components/ui/icons';
+import { FileText, Mail, BookOpen, X } from 'lucide-react';
 import type { JSONContent } from 'novel';
 
 interface RelevantChunk {
@@ -29,7 +29,6 @@ interface RelatedEmail {
   creationDate: Date;
 }
 
-// Update the document data interface to include the draft property
 interface DocumentData {
   content: string;
   heading: string;
@@ -43,22 +42,34 @@ interface AppDocumentsBarProps {
 
 const EmailItem = ({ email, onSelect }: { email: RelatedEmail, onSelect: (email: RelatedEmail) => void }) => {
   const formattedDate = new Date(email.creationDate).toLocaleDateString();
-  const messagePreview = email.message.length > 60 
-    ? `${email.message.substring(0, 60)}...` 
+  const messagePreview = email.message.length > 80
+    ? `${email.message.substring(0, 80)}...`
     : email.message;
-  
+
   return (
-    <li className="mb-2 p-3 border rounded hover:bg-gray-50 cursor-pointer" onClick={() => onSelect(email)}>
-      <div className="flex justify-between mb-1">
-        <span className="font-medium text-sm">{email.category}</span>
-        <span className="text-xs text-gray-500">{formattedDate}</span>
+    <button
+      type="button"
+      onClick={() => onSelect(email)}
+      className="w-full text-left bg-card border border-border rounded-xl p-4 hover:shadow-sm transition-all"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className="text-[13px] font-semibold text-foreground">{email.category}</span>
+        <span className="text-[11px] text-muted-foreground shrink-0">{formattedDate}</span>
       </div>
-      <p className="text-sm text-gray-700">{messagePreview}</p>
-      <div className="flex mt-1">
-        {email.draft && <span className="text-xs mr-2 bg-secondary text-primary px-2 py-0.5 rounded">Has draft</span>}
-        {email.reply && <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Has reply</span>}
+      <p className="text-[12.5px] text-muted-foreground leading-relaxed mb-2">{messagePreview}</p>
+      <div className="flex gap-1.5">
+        {email.draft && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[hsl(var(--amber-bg))] text-[hsl(var(--amber-foreground))]">
+            Has draft
+          </span>
+        )}
+        {email.reply && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[hsl(var(--teal-bg))] text-[hsl(var(--teal-foreground))]">
+            Has reply
+          </span>
+        )}
       </div>
-    </li>
+    </button>
   );
 };
 
@@ -70,6 +81,12 @@ const houseRules = `
 5. Use appropriate language at all times.
 `;
 
+const TAB_ITEMS = [
+  { key: 'documents', label: 'References', icon: FileText },
+  { key: 'emails', label: 'Emails', icon: Mail },
+  { key: 'houseRules', label: 'Rules', icon: BookOpen },
+] as const;
+
 export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
   const [matches, setMatches] = useState<RelevantChunk[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,9 +95,9 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
   const [error, setError] = useState<string | null>(null);
   const [documentViewOpen, setDocumentViewOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<DocumentData | null>(null);
-  const [relatedEmails, setRelatedEmails] = useState<RelatedEmail[]>([]); 
+  const [relatedEmails, setRelatedEmails] = useState<RelatedEmail[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<RelatedEmail | null>(null);
-  const [view, setView] = useState<'documents' | 'emails' |  'houseRules'>('documents'); 
+  const [view, setView] = useState<'documents' | 'emails' | 'houseRules'>('documents');
   const [reasoning, setReasoning] = useState<string | null>(null);
 
   const { state, toggleSidebar } = useCitationsBar();
@@ -121,9 +138,9 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        !documentViewOpen && 
+        !documentViewOpen &&
         state === 'expanded' &&
-        barRef.current && 
+        barRef.current &&
         !barRef.current.contains(event.target as Node) &&
         !(event.target as Element).closest('[data-citation-toggle]')
       ) {
@@ -151,7 +168,7 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
 
       try {
         const response = await fetch(`/api/document?recordId=${recordId}`, {
-          method: 'GET',  
+          method: 'GET',
         });
 
         if (!response.ok) {
@@ -159,7 +176,6 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
         }
 
         const data = await response.json();
-
         const { reasoning, relevantChunks, relatedEmails } = data;
 
         setMatches(relevantChunks || []);
@@ -188,109 +204,116 @@ export function AppDocumentsBar({ onInsertReference }: AppDocumentsBarProps) {
       >
         <DocumentsBarHeader>
           <DocumentsBarMenu>
-            <div className="flex items-center justify-between px-4 py-2 text-foreground">
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setView('documents')}
-                  className={`p-2 rounded-md border ${view === 'documents' ? 'bg-gray-100 border-gray-400' : 'border-gray-300 hover:border-gray-400'}`}
-                  title="Documents"
-                >
-                  <DocumentsIcon size={20} />
-                </button>
-
-                <button
-                  onClick={() => setView('emails')}
-                  className={`p-2 rounded-md border ${view === 'emails' ? 'bg-gray-100 border-gray-400' : 'border-gray-300 hover:border-gray-400'}`}
-                  title="Emails"
-                >
-                  <EmailsIcon size={20} />
-                </button>
-
-                <button
-                  onClick={() => setView('houseRules')}
-                  className={`p-2 rounded-md border ${view === 'houseRules' ? 'bg-gray-100 border-gray-400' : 'border-gray-300 hover:border-gray-400'}`}
-                  title="House Rules"
-                >
-                  <BookOpenIcon size={20} />
-                </button>
+            <div className="flex items-center gap-2 px-3 py-2.5">
+              {/* Tab pills */}
+              <div className="flex gap-1 flex-1">
+                {TAB_ITEMS.map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setView(key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all ${
+                      view === key
+                        ? 'bg-foreground text-background'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
               </div>
 
+              {/* Close button */}
               <button
+                type="button"
                 onClick={() => toggleSidebar()}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
               >
-                <CrossIcon size={16} />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </DocumentsBarMenu>
         </DocumentsBarHeader>
 
         <DocumentsBarContent>
+          {/* References tab */}
           {view === 'documents' && (
             isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <p className="text-sm text-muted-foreground mb-2">Loading references...</p>
-                  <div className="w-16 h-1 bg-primary rounded-full animate-pulse" />
-                </div>
-              ) : error ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              ) : matches ? (
-                <Referencing matches={matches} reasoning={reasoning} onSelect={handleChunkSelect} />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full p-4">
-                  <p className="text-sm text-muted-foreground">No references available</p>
-                </div>
-              )
+              <div className="flex flex-col items-center justify-center h-full gap-2">
+                <div className="w-6 h-6 border-2 border-muted rounded-full animate-spin border-t-primary" />
+                <p className="text-xs text-muted-foreground">Loading references...</p>
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-xs text-destructive">{error}</p>
+              </div>
+            ) : matches ? (
+              <Referencing matches={matches} reasoning={reasoning} onSelect={handleChunkSelect} />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full p-4">
+                <p className="text-xs text-muted-foreground">No references available</p>
+              </div>
+            )
           )}
 
+          {/* Emails tab */}
           {view === 'emails' && (
             <div className="flex flex-col h-full p-4">
-              <h3 className="text-sm font-medium mb-3">Related Emails</h3>
+              <div className="text-[10.5px] font-bold tracking-widest uppercase text-muted-foreground mb-3">
+                Related Emails
+              </div>
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center grow">
-                  <p className="text-sm text-muted-foreground mb-2">Loading related emails...</p>
-                  <div className="w-16 h-1 bg-primary rounded-full animate-pulse" />
+                <div className="flex flex-col items-center justify-center grow gap-2">
+                  <div className="w-6 h-6 border-2 border-muted rounded-full animate-spin border-t-primary" />
+                  <p className="text-xs text-muted-foreground">Loading...</p>
                 </div>
               ) : error ? (
                 <div className="flex items-center justify-center grow">
-                  <p className="text-sm text-destructive">{error}</p>
+                  <p className="text-xs text-destructive">{error}</p>
                 </div>
               ) : relatedEmails.length > 0 ? (
-                <ul className="space-y-2 overflow-y-auto max-h-[calc(100vh-150px)]">
+                <div className="space-y-2.5 overflow-y-auto">
                   {relatedEmails.map((email) => (
                     <EmailItem key={email.id} email={email} onSelect={handleEmailSelect} />
                   ))}
-                </ul>
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center grow">
-                  <p className="text-sm text-muted-foreground">No related emails found</p>
+                  <p className="text-xs text-muted-foreground">No related emails found</p>
                 </div>
               )}
             </div>
           )}
+
+          {/* Rules tab */}
           {view === 'houseRules' && (
             <div className="flex flex-col p-4">
-              <h3 className="text-sm font-medium mb-3">House Rules</h3>
+              <div className="text-[10.5px] font-bold tracking-widest uppercase text-muted-foreground mb-3">
+                House Rules
+              </div>
               {isEditing ? (
                 <textarea
-                  className="p-2 border rounded-md w-full h-40"
+                  className="p-3 border border-border rounded-lg w-full h-40 text-[13px] bg-background focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={editableHouseRules}
                   onChange={(e) => setEditableHouseRules(e.target.value)}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">{editableHouseRules}</p>
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <p className="text-[13px] text-muted-foreground leading-[1.85] whitespace-pre-line">
+                    {editableHouseRules}
+                  </p>
+                </div>
               )}
               <button
+                type="button"
                 onClick={() => {
                   if (isEditing) {
-                    // For now, Save Changes just toggles the mode and returns the same rules
-                    setEditableHouseRules(editableHouseRules); // Placeholder action for saving
+                    setEditableHouseRules(editableHouseRules);
                   }
-                  setIsEditing(!isEditing); // Toggle the editing mode
+                  setIsEditing(!isEditing);
                 }}
-                className="mt-2 p-2 rounded-md bg-primary text-primary-foreground border border-primary hover:bg-primary/90"
+                className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12.5px] font-semibold hover:bg-primary/90 transition-colors"
               >
                 {isEditing ? 'Save Changes' : 'Edit'}
               </button>

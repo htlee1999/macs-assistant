@@ -23,75 +23,93 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 40 20% 97%;
+    --foreground: 240 10% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 10% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 172 66% 36%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 172 30% 95%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+    --popover-foreground: 240 10% 10%;
+    --primary: 38 85% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 38 60% 95%;
+    --secondary-foreground: 35 55% 30%;
+    --muted: 40 10% 93%;
+    --muted-foreground: 40 5% 45%;
+    --accent: 40 10% 93%;
     --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 12 70% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 91%;
-    --input: 240 5.9% 90%;
-    --ring: 172 66% 36%;
-    --chart-1: 172 58% 39%;
-    --chart-2: 160 50% 50%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --border: 40 8% 89%;
+    --input: 40 8% 89%;
+    --ring: 38 85% 52%;
+    --chart-1: 38 85% 52%;
+    --chart-2: 175 50% 40%;
+    --chart-3: 245 50% 50%;
+    --chart-4: 12 70% 45%;
+    --chart-5: 340 60% 55%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-background: 40 15% 96%;
+    --sidebar-foreground: 240 10% 20%;
+    --sidebar-primary: 240 10% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 172 66% 36%;
+    --sidebar-accent: 40 10% 93%;
+    --sidebar-accent-foreground: 240 10% 10%;
+    --sidebar-border: 40 8% 89%;
+    --sidebar-ring: 38 85% 52%;
     --novel-highlight-default: #ffffff;
+
+    --teal: 175 50% 40%;
+    --teal-foreground: 175 60% 25%;
+    --teal-bg: 175 40% 95%;
+    --teal-border: 175 30% 80%;
+    --amber: 38 85% 52%;
+    --amber-foreground: 35 55% 30%;
+    --amber-bg: 38 60% 95%;
+    --amber-border: 38 40% 80%;
   }
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 172 66% 44%;
-    --primary-foreground: 172 80% 8%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 240 10% 5%;
+    --foreground: 0 0% 96%;
+    --card: 240 8% 8%;
+    --card-foreground: 0 0% 96%;
+    --popover: 240 8% 8%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 38 80% 55%;
+    --primary-foreground: 38 90% 8%;
+    --secondary: 240 4% 14%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 240 4% 14%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 240 4% 14%;
+    --accent-foreground: 0 0% 96%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 172 66% 44%;
-    --chart-1: 172 60% 45%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 172 66% 44%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 38 80% 55%;
+    --chart-1: 38 80% 55%;
+    --chart-2: 175 50% 45%;
+    --chart-3: 245 50% 55%;
+    --chart-4: 12 65% 50%;
+    --chart-5: 340 60% 55%;
+    --sidebar-background: 240 8% 7%;
+    --sidebar-foreground: 240 5% 90%;
+    --sidebar-primary: 38 80% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 172 66% 44%;
+    --sidebar-accent: 240 4% 14%;
+    --sidebar-accent-foreground: 240 5% 90%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-ring: 38 80% 55%;
     --novel-highlight-default: #000000;
+
+    --teal: 175 50% 45%;
+    --teal-foreground: 175 40% 70%;
+    --teal-bg: 175 30% 12%;
+    --teal-border: 175 25% 20%;
+    --amber: 38 80% 55%;
+    --amber-foreground: 38 60% 75%;
+    --amber-bg: 38 40% 12%;
+    --amber-border: 38 30% 22%;
   }
 }
 
@@ -125,72 +143,72 @@
   .prose {
     @apply max-w-none text-foreground;
   }
-  
+
   .prose h1 {
     @apply text-3xl font-bold tracking-tight text-foreground mb-4 mt-8;
   }
-  
+
   .prose h2 {
     @apply text-2xl font-semibold tracking-tight text-foreground mb-3 mt-6;
   }
-  
+
   .prose h3 {
     @apply text-xl font-semibold text-foreground mb-3 mt-6;
   }
-  
-  .prose strong, 
+
+  .prose strong,
   .prose b {
     @apply font-bold text-foreground;
   }
-  
+
   /* Dark mode specific overrides - explicitly maintaining font weights */
   .dark .prose h1 {
     @apply text-gray-100 font-bold;
   }
-  
+
   .dark .prose h2 {
     @apply text-gray-100 font-semibold;
   }
-  
+
   .dark .prose h3 {
     @apply text-gray-100 font-semibold;
   }
-  
+
   .dark .prose strong,
   .dark .prose b {
     @apply text-gray-100 font-bold;
   }
-  
+
   /* ProseMirror specific styles with explicit font weights */
   .ProseMirror h1 {
     @apply font-bold;
   }
-  
+
   .ProseMirror h2,
   .ProseMirror h3 {
     @apply font-semibold;
   }
-  
+
   .ProseMirror strong,
   .ProseMirror b {
     @apply font-bold;
   }
-  
+
   /* Dark mode for ProseMirror - maintain font weights */
   .dark .ProseMirror h1 {
     @apply text-gray-100 font-bold;
   }
-  
+
   .dark .ProseMirror h2,
   .dark .ProseMirror h3 {
     @apply text-gray-100 font-semibold;
   }
-  
+
   .dark .ProseMirror strong,
   .dark .ProseMirror b {
     @apply text-gray-100 font-bold;
   }
-  
+
   /* Additional fix for Novel editor specific selectors */
   .prose .is-editor-empty:first-child::before {
     @apply text-muted-foreground;
@@ -199,7 +217,7 @@
     pointer-events: none;
     height: 0;
   }
-  
+
   /* Fix for Novel editor's content editable elements */
   [contenteditable] h1,
   [contenteditable] h2,
@@ -238,14 +256,14 @@
 }
 
 .suggestion-highlight {
-  @apply bg-teal-200 hover:bg-teal-300 dark:hover:bg-teal-400/50 dark:text-teal-50 dark:bg-teal-500/40;
+  @apply bg-amber-200 hover:bg-amber-300 dark:hover:bg-amber-400/50 dark:text-amber-50 dark:bg-amber-500/40;
 }
 
 .fade-mask {
   position: relative;
   display: block;
   overflow: hidden;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0)); 
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
 }
 

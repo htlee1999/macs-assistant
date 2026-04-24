@@ -31,7 +31,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     id: record.id,
     title: `${record.caseType} at ${record.location}`,
     content: record.message,
-    summary: record.summary
+    summary: record.summary,
+    channel: record.channel,
+    category: record.category,
+    sectionCode: record.sectionCode,
+    location: record.location || '',
+    caseType: record.caseType,
   }
 
   return (
@@ -39,7 +44,6 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       id={record.id}
       details={details}
       selectedModelId={selectedModelId}
-
     />
   );
 }

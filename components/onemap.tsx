@@ -200,8 +200,8 @@ const OneMap: React.FC<OneMapProps> = ({
   // Adjust colors based on theme
   const themeAwareOptions = {
     ...h3Options,
-    fillColor: theme === 'dark' ? '#4299e1' : h3Options.fillColor,
-    strokeColor: theme === 'dark' ? '#2b6cb0' : h3Options.strokeColor,
+    fillColor: theme === 'dark' ? '#d4a24e' : h3Options.fillColor,
+    strokeColor: theme === 'dark' ? '#b8862e' : h3Options.strokeColor,
   };
   
   return (
@@ -234,7 +234,7 @@ const OneMap: React.FC<OneMapProps> = ({
           // Only show markers at higher zoom levels (16+) when hexagons are hidden
           return (
             <Marker 
-              key={index} 
+              key={`marker-${location.name}-${location.locationX}-${location.locationY}`}
               position={[lat, lng]}
               opacity={currentZoom >= 16 ? 1 : 0} // Only visible at high zoom
             >

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/documents-bar';
 
 const LEFT_WIDTH = '16rem';
-const RIGHT_WIDTH = '18rem';
+const RIGHT_WIDTH = '22rem';
 
 function Grid({
   user,

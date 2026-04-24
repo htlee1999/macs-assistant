@@ -136,7 +136,7 @@ const OptimizedH3Layer: React.FC<H3LayerProps> = ({
                 e.target.setStyle({ 
                   fillOpacity: Math.min(1, (options.opacity || 0.7) * 1.5), 
                   weight: (options.strokeWidth || 2) * 1.5,
-                  fillColor: '#4299e1' // Lighter blue on hover
+                  fillColor: '#d4a24e'
                 });
               });
               
