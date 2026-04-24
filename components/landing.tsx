@@ -1,12 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import useSWR from 'swr';
 import { generateUUID } from '@/lib/utils';
 import { DraftHeader } from '@/components/editor/draft-header';
-import type { Headline } from '@/lib/db/schema'
+import type { Headline, Record } from '@/lib/db/schema'
 import { useProcessorContext } from '@/components/daily-processor';
 import { ProcessorButton } from '@/components/processor-button';
 import { AlertTriangle, X, ChevronRight, ChevronDown, Inbox, FileText, CheckCircle, TrendingUp } from 'lucide-react';
 import '@/app/globals.css';
+
+const recordsFetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   const tempId = generateUUID();
@@ -14,15 +17,26 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [filteredToday, setFilteredToday] = useState<Headline[]>([]);
   const [filteredOverall, setFilteredOverall] = useState<Headline[]>([]);
-  const [filteredEvergreen, setFilteredEvergreen] = useState<{ [key: string]: Headline[] }>({});
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isAlertExpanded, setIsAlertExpanded] = useState<boolean>(false);
   const [expandedHeadline, setExpandedHeadline] = useState<string | null>(null);
-  const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('today');
 
   const { headlines } = useProcessorContext();
+  const { data: records } = useSWR<Record[]>('/api/records', recordsFetcher);
+
+  const recordCounts = useMemo(() => {
+    const list = records ?? [];
+    const count = (outcome: string) =>
+      list.filter((r) => (r.reply ? 'Replied' : r.outcome) === outcome).length;
+    return {
+      open: count('Open'),
+      drafts: count('Draft'),
+      vetted: count('Vetted'),
+      total: list.length,
+    };
+  }, [records]);
 
   useEffect(() => {
     if (headlines.length > 0) {
@@ -39,20 +53,9 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
 
       const todayHeadlines = filteredByDate.filter((headline) => headline.type === 'today');
       const overallHeadlines = filteredByDate.filter((headline) => headline.type === 'overall');
-      const evergreenHeadlines = filteredByDate.filter((headline) => headline.type === 'evergreen');
-
-      const groupedEvergreenHeadlines: { [key: string]: Headline[] } = {};
-      evergreenHeadlines.forEach((headline) => {
-        const topic = headline.topic || 'Uncategorized';
-        if (!groupedEvergreenHeadlines[topic]) {
-          groupedEvergreenHeadlines[topic] = [];
-        }
-        groupedEvergreenHeadlines[topic].push(headline);
-      });
 
       setFilteredToday(todayHeadlines);
       setFilteredOverall(overallHeadlines);
-      setFilteredEvergreen(groupedEvergreenHeadlines);
 
       setLoading(false);
     }
@@ -68,10 +71,6 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
 
   const toggleExpand = (id: string) => {
     setExpandedHeadline(expandedHeadline === id ? null : id);
-  };
-
-  const toggleExpandTopic = (topic: string) => {
-    setExpandedTopic(expandedTopic === topic ? null : topic);
   };
 
   const highMatchHeadlines = filteredOverall.filter(headline => Number.parseFloat(headline.match_percent) >= 10);
@@ -101,6 +100,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
     return (
       <div className="border border-border rounded-[10px] overflow-hidden mb-2 bg-card">
         <button
+          type="button"
           className="w-full text-left p-4 flex justify-between items-start gap-3"
           onClick={() => toggleExpand(headline.id)}
         >
@@ -122,11 +122,14 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
         {isOpen && headline.examples && (
           <div className="px-4 pb-3.5 border-t border-border/50">
             <div className="text-[10.5px] font-bold uppercase tracking-widest text-muted-foreground my-2.5">Examples</div>
-            {headline.examples.split("|").map((example, index) => (
-              <div key={index} className="text-[11.5px] text-muted-foreground px-2.5 py-1.5 bg-background rounded-md mb-1 font-mono">
-                &ldquo;{example.trim()}&rdquo;
-              </div>
-            ))}
+            {headline.examples.split("|").map((example) => {
+              const trimmed = example.trim();
+              return (
+                <div key={`${headline.id}-${trimmed}`} className="text-[11.5px] text-muted-foreground px-2.5 py-1.5 bg-background rounded-md mb-1 font-mono">
+                  &ldquo;{trimmed}&rdquo;
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -149,7 +152,6 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
   const tabItems = [
     { key: 'today', label: "Today's Trends" },
     { key: 'overall', label: 'Overall Patterns' },
-    { key: 'evergreen', label: 'Evergreen Topics' },
   ];
 
   return (
@@ -170,20 +172,31 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
 
           {/* Metric Cards */}
           <div className="flex gap-3 mb-4">
-            <MetricCard label="Today" value={filteredToday.length} sub="today's headlines" icon={Inbox} accentClass="bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" />
-            <MetricCard label="Overall" value={filteredOverall.length} sub="overall patterns" icon={FileText} accentClass="bg-[hsl(var(--amber-bg))] text-[hsl(var(--amber-foreground))]" />
-            <MetricCard label="Topics" value={Object.keys(filteredEvergreen).length} sub="evergreen topics" icon={CheckCircle} accentClass="bg-[hsl(var(--teal-bg))] text-[hsl(var(--teal-foreground))]" />
-            <MetricCard label="Alerts" value={highMatchHeadlines.length} sub="campaign alerts" icon={TrendingUp} accentClass="bg-destructive/10 text-destructive" />
+            <MetricCard label="Open" value={recordCounts.open} sub="awaiting response" icon={Inbox} accentClass="bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" />
+            <MetricCard label="Drafts" value={recordCounts.drafts} sub="pending review" icon={FileText} accentClass="bg-[hsl(var(--amber-bg))] text-[hsl(var(--amber-foreground))]" />
+            <MetricCard label="Vetted" value={recordCounts.vetted} sub="ready to send" icon={CheckCircle} accentClass="bg-[hsl(var(--teal-bg))] text-[hsl(var(--teal-foreground))]" />
+            <MetricCard label="Total" value={recordCounts.total} sub="all records" icon={TrendingUp} accentClass="bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400" />
           </div>
 
           {/* Alert Bar */}
           {hasHighMatch && !isAlertExpanded && (
-            <div className="mb-4 p-3 rounded-[10px] flex items-center gap-2.5 bg-destructive/10 border border-destructive/20 cursor-pointer" onClick={() => setIsAlertExpanded(true)}>
-              <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
-              <span className="flex-1 text-[12.5px] font-medium text-destructive">
-                Possible write-in campaign detected — {highMatchHeadlines.length} headline(s) above 10% match threshold
-              </span>
-              <button onClick={(e) => { e.stopPropagation(); setIsAlertExpanded(false); }} className="text-muted-foreground p-0.5">
+            <div className="mb-4 rounded-[10px] bg-destructive/10 border border-destructive/20 flex items-stretch">
+              <button
+                type="button"
+                onClick={() => setIsAlertExpanded(true)}
+                className="flex-1 text-left p-3 flex items-center gap-2.5"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
+                <span className="flex-1 text-[12.5px] font-medium text-destructive">
+                  Possible write-in campaign detected — {highMatchHeadlines.length} headline(s) above 10% match threshold
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAlertExpanded(false)}
+                className="text-muted-foreground p-3"
+                aria-label="Dismiss alert"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -193,7 +206,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
             <div className="mb-4 p-4 rounded-[10px] bg-destructive/5 border border-destructive/15">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold text-sm text-destructive">Campaign Alert Details</h4>
-                <button onClick={() => setIsAlertExpanded(false)} className="text-muted-foreground p-0.5 hover:text-foreground">
+                <button type="button" onClick={() => setIsAlertExpanded(false)} className="text-muted-foreground p-0.5 hover:text-foreground" aria-label="Close alert details">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -216,6 +229,7 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                 {tabItems.map(({ key, label }) => (
                   <button
                     key={key}
+                    type="button"
                     onClick={() => setActiveTab(key)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       activeTab === key
@@ -259,66 +273,6 @@ const Landing = ({ selectedModelId }: { selectedModelId: string }) => {
                 </>
               )}
 
-              {/* Evergreen Tab */}
-              {activeTab === 'evergreen' && (
-                <>
-                  <DateRangeSelector />
-                  <div className="max-h-[400px] overflow-y-auto mt-3">
-                    {Object.entries(filteredEvergreen).length > 0 ? (
-                      Object.entries(filteredEvergreen).map(([topic, topicHeadlines]) => {
-                        const isOpen = expandedTopic === topic;
-                        return (
-                          <div key={topic} className="border border-border rounded-[10px] overflow-hidden mb-2 bg-card">
-                            <button
-                              className={`w-full text-left px-4 py-3 flex justify-between items-center ${isOpen ? 'bg-background' : ''}`}
-                              onClick={() => toggleExpandTopic(topic)}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-md bg-[hsl(var(--amber-bg))] text-[hsl(var(--amber-foreground))]">
-                                  {topic}
-                                </span>
-                              </div>
-                              {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
-                            </button>
-                            {isOpen && (
-                              <div className="px-4 pb-3.5 border-t border-border/50">
-                                {Array.isArray(topicHeadlines) &&
-                                  topicHeadlines.map((headline) => (
-                                    <div key={headline.id} className="mt-3">
-                                      <h4 className="font-semibold text-[13px] text-foreground mb-1">{headline.title}</h4>
-                                      <p className="text-xs text-muted-foreground leading-relaxed mb-2">{headline.desc}</p>
-
-                                      {headline.score && (
-                                        <p className="text-xs mb-1.5">
-                                          <span className="text-muted-foreground">Sentiment: </span>
-                                          <span className={`font-medium capitalize ${headline.score === "positive" ? "text-[hsl(var(--teal-foreground))]" : headline.score === "negative" ? "text-destructive" : "text-muted-foreground"}`}>
-                                            {headline.score}
-                                          </span>
-                                        </p>
-                                      )}
-
-                                      {headline.examples && (
-                                        <div className="space-y-1">
-                                          {headline.examples.split("|").map((example: string, index: number) => (
-                                            <div key={index} className="text-[11px] text-muted-foreground px-2.5 py-1.5 bg-background rounded-md font-mono">
-                                              &ldquo;{example.trim()}&rdquo;
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="p-8 text-muted-foreground text-center text-sm">No evergreen topics available</div>
-                    )}
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 // onemap.tsx - Updated to use H3HeatmapLayer correctly
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { MapContainer as MapContainerBase, Marker as MarkerBase, Popup, useMap } from 'react-leaflet';
 
@@ -77,32 +77,35 @@ const validateCoordinates = (lat: number, lng: number): [number, number] => {
 // Component to handle theme changes and tile layer updates
 const ThemeTileLayer = ({ theme }: { theme: string | undefined }) => {
   const map = useMap();
-  
-  // Get tile URL based on theme
-  const getTileUrl = (currentTheme: string | undefined) => {
-    return currentTheme === 'dark'
+  const tileLayerRef = useRef<any | null>(null);
+
+  useEffect(() => {
+    if (!map || !(map as any)._panes?.tilePane) return;
+
+    const tileUrl = theme === 'dark'
       ? 'https://www.onemap.gov.sg/maps/tiles/Night/{z}/{x}/{y}.png'
       : 'https://www.onemap.gov.sg/maps/tiles/Default/{z}/{x}/{y}.png';
-  };
-  
-  useEffect(() => {
-    const tileUrl = getTileUrl(theme);
-    // Remove existing tile layers
-    map.eachLayer((layer: any) => {
-      if (layer instanceof L.TileLayer) {
-        map.removeLayer(layer);
-      }
-    });
-    
-    // Add new tile layer
-    L.tileLayer(tileUrl, {
+
+    const tileLayer = L.tileLayer(tileUrl, {
       detectRetina: true,
       maxZoom: 19,
       minZoom: 11,
       attribution: '<img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" style="height:20px;width:20px;"/>&nbsp;<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a>&nbsp;©&nbsp;contributors&nbsp;&#124;&nbsp;<a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a>'
-    }).addTo(map);
+    });
+
+    tileLayer.addTo(map);
+    tileLayerRef.current = tileLayer;
+
+    return () => {
+      if (tileLayerRef.current) {
+        try {
+          map.removeLayer(tileLayerRef.current);
+        } catch {}
+        tileLayerRef.current = null;
+      }
+    };
   }, [theme, map]);
-  
+
   return null;
 };
 

@@ -1,5 +1,5 @@
 // H3HeatmapLayer.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import leaflet from 'leaflet';
 const L = leaflet as any;
@@ -39,8 +39,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
 }) => {
   const map = useMap();
   const hexLayerRef = useRef<any | null>(null);
-  const [currentZoom, setCurrentZoom] = useState(map.getZoom());
-  const [hexagons, setHexagons] = useState<Map<string, any>>(new Map());
+  const hexagonsRef = useRef<Map<string, any>>(new Map());
   
   // Dynamically adjust resolution based on zoom level
   const getResolutionForZoom = (zoom: number): number => {
@@ -57,7 +56,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
     // At higher zoom levels, hide hexagons
     const shouldHideHexagons = zoom >= 16;
     
-    hexagons.forEach((polygon, _hexId) => {
+    hexagonsRef.current.forEach((polygon, _hexId) => {
       if (shouldHideHexagons) {
         // Hide hexagons at high zoom levels
         polygon.setStyle({ fillOpacity: 0, opacity: 0 });
@@ -116,7 +115,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
       
       // Clear existing hexagons
       hexLayerRef.current.clearLayers();
-      setHexagons(new Map());
+      hexagonsRef.current = new Map();
       console.log("Cleared existing hexagons");
       
       // Skip if no locations
@@ -155,9 +154,8 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
         return;
       }
       
-      // Get current zoom and update state
+      // Get current zoom
       const zoom = map.getZoom();
-      setCurrentZoom(zoom);
       
       // Get appropriate resolution for current zoom
       const useResolution = options.resolution || getResolutionForZoom(zoom);
@@ -188,8 +186,8 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             const isSwappedLat = lng >= 1.14 && lng <= 1.5;
             const isSwappedLng = lat >= 103.5 && lat <= 104.5;
             
-            let cellId;
-            
+            let cellId: string;
+
             if (isValidLat && isValidLng) {
               // Normal coordinates
               cellId = h3.latLngToCell(lat, lng, useResolution);
@@ -202,13 +200,9 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
               console.warn(`Invalid coordinates: ${lat},${lng}`);
               return;
             }
-            
+
             // Count outlets per cell
-            if (locationCells.has(cellId)) {
-              locationCells.set(cellId, locationCells.get(cellId)! + 1);
-            } else {
-              locationCells.set(cellId, 1);
-            }
+            locationCells.set(cellId, (locationCells.get(cellId) ?? 0) + 1);
             
             // Store locations for each cell
             if (!cellsToLocations.has(cellId)) {
@@ -267,8 +261,8 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
               fillColor: fillColor, // Dynamic color based on count
               color: options.strokeColor,
               weight: options.strokeWidth,
-              fillOpacity: currentZoom >= 16 ? 0 : consistentOpacity, // Hide at high zoom levels
-              opacity: currentZoom >= 16 ? 0 : 1, // Hide at high zoom levels
+              fillOpacity: zoom >= 16 ? 0 : consistentOpacity, // Hide at high zoom levels
+              opacity: zoom >= 16 ? 0 : 1, // Hide at high zoom levels
               interactive: true,
               bubblingMouseEvents: true,
             });
@@ -276,7 +270,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             // Add hover effects and dynamic tooltip display if enabled
             if (options.enableHover) {
               polygon.on('mouseover', (e: any) => {
-                if (currentZoom < 16) { // Only show effects if not at high zoom
+                if (map.getZoom() < 16) { // Only show effects if not at high zoom
                   // Increase opacity on hover but don't exceed 1
                   const hoverOpacity = Math.min(1, consistentOpacity * 1.5);
                   e.target.setStyle({ 
@@ -291,7 +285,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
               });
               
               polygon.on('mouseout', (e: any) => {
-                if (currentZoom < 16) { // Only reset if not at high zoom
+                if (map.getZoom() < 16) { // Only reset if not at high zoom
                   // Use consistent opacity when not hovering
                   e.target.setStyle({ 
                     fillOpacity: consistentOpacity, 
@@ -357,11 +351,8 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
             
             // Store the polygon for future reference
             newHexagons.set(hexId, polygon);
-            
-            // Add to map
-            polygon.addTo(map);
-            
-            // Also add to our layer
+
+            // Add to our layer (which is already on the map)
             if (hexLayerRef.current) {
               hexLayerRef.current.addLayer(polygon);
             }
@@ -371,8 +362,8 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
           }
         });
         
-        // Update hexagons state
-        setHexagons(newHexagons);
+        // Update hexagons ref
+        hexagonsRef.current = newHexagons;
         
         console.log(`Successfully rendered ${addedCells.size} H3 heatmap hexagons`);
         
@@ -390,9 +381,7 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
     
     // Function to handle zoom changes
     const handleZoomChange = () => {
-      const newZoom = map.getZoom();
-      setCurrentZoom(newZoom);
-      updateHexagonVisibility(newZoom);
+      updateHexagonVisibility(map.getZoom());
     };
     
     // Throttled event handler to prevent too frequent updates
@@ -427,9 +416,10 @@ const H3HeatmapLayer: React.FC<H3HeatmapLayerProps> = ({
       
       if (hexLayerRef.current) {
         map.removeLayer(hexLayerRef.current);
+        hexLayerRef.current = null;
       }
     };
-  }, [map, options, locations, currentZoom]);
+  }, [map, options, locations]);
   
   return null;
 };

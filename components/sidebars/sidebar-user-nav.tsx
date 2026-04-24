@@ -5,7 +5,6 @@ import Image from 'next/image';
 import type { User } from 'next-auth';
 import { signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation';
 
 import {
   DropdownMenu,
@@ -22,7 +21,6 @@ import {
 
 export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, theme } = useTheme();
-  const router = useRouter();
 
   const displayName = user.name || user.email?.split('@')[0] || 'User';
   const displayEmail = user.email || '';
@@ -62,12 +60,6 @@ export function SidebarUserNav({ user }: { user: User }) {
               onSelect={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {`Toggle ${theme === 'light' ? 'dark' : 'light'} mode`}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => router.push('/OneMap')}
-            >
-              OneMap
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
